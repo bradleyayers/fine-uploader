@@ -49,22 +49,25 @@ qq.traditional.XhrUploadHandler = function(spec, proxy) {
         }),
 
         createReadyStateChangedHandler = function(id, xhr) {
-            var promise = new qq.Promise();
+            return new Promise(function (resolve, reject) {
+                xhr.onreadystatechange = function() {
+                    var error;
 
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState === 4) {
-                    var result = onUploadOrChunkComplete(id, xhr);
+                    if (xhr.readyState === 4) {
+                        var result = onUploadOrChunkComplete(id, xhr);
 
-                    if (result.success) {
-                        promise.success(result.response, xhr);
+                        if (result.success) {
+                            resolve({ response: result.response, xhr: xhr});
+                        }
+                        else {
+                            error = new Error();
+                            error.response = result.response;
+                            error.xhr = xhr;
+                            reject(error);
+                        }
                     }
-                    else {
-                        promise.failure(result.response, xhr);
-                    }
-                }
-            };
-
-            return promise;
+                };
+            });
         },
 
         getChunksCompleteParams = function(id) {

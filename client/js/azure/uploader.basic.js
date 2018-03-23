@@ -109,11 +109,11 @@
                         if (fileExtension !== undefined) {
                             blobNameToUse += "." + fileExtension;
                         }
-                        return new qq.Promise().success(blobNameToUse);
+                        return Promise.resolve(blobNameToUse);
                     case "filename":
-                        return new qq.Promise().success(filename);
+                        return Promise.resolve(filename);
                     default:
-                        return new qq.Promise.failure("Invalid blobName option value - " + blobNameOptionValue);
+                        return Promise.reject("Invalid blobName option value - " + blobNameOptionValue);
                 }
             }
             else {

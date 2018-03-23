@@ -235,23 +235,6 @@ describe("S3 serverless upload tests", function() {
                     });
                 }
 
-                it("qq.Promise", function(done) {
-                    var callback = function() {
-                        assert.ok(true);
-
-                        var promise = new qq.Promise();
-                        promise.success({
-                            accessKey: testAccessKeyFromCallback,
-                            secretKey: testSecretKey,
-                            expiration: new Date(Date.now() + 10000),
-                            sessionToken: testSessionTokenFromCallback
-                        });
-                        return promise;
-                    };
-
-                    runTest(callback, done);
-                });
-
                 it("Q.js", function(done) {
                     var callback = function() {
                         assert.ok(true);

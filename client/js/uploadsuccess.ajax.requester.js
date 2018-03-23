@@ -47,22 +47,22 @@ qq.UploadSuccessAjaxRequester = function(o) {
             // response body for an "error" response.
             if (isError || (parsedResponse && (parsedResponse.error || parsedResponse.success === false))) {
                 options.log("Upload success request was rejected by the server.", "error");
-                promise.failure(qq.extend(parsedResponse, failureIndicator));
+                promise.reject(qq.extend(parsedResponse, failureIndicator));
             }
             else {
                 options.log("Upload success was acknowledged by the server.");
-                promise.success(qq.extend(parsedResponse, successIndicator));
+                promise.resolve(qq.extend(parsedResponse, successIndicator));
             }
         }
         catch (error) {
             // This will be executed if a JSON response is not present.  This is not mandatory, so account for this properly.
             if (isError) {
                 options.log(qq.format("Your server indicated failure in its upload success request response for id {}!", id), "error");
-                promise.failure(failureIndicator);
+                promise.reject(failureIndicator);
             }
             else {
                 options.log("Upload success was acknowledged by the server.");
-                promise.success(successIndicator);
+                promise.resolve(successIndicator);
             }
         }
     }
@@ -90,21 +90,19 @@ qq.UploadSuccessAjaxRequester = function(o) {
          * @param id ID of the associated file
          * @param spec `Object` with the properties that correspond to important values that we want to
          * send to the server with this request.
-         * @returns {qq.Promise} A promise to be fulfilled when the response has been received and parsed.  The parsed
+         * @returns Promise A promise to be fulfilled when the response has been received and parsed.  The parsed
          * payload of the response will be passed into the `failure` or `success` promise method.
          */
         sendSuccessRequest: function(id, spec) {
-            var promise = new qq.Promise();
+            return new Promise(function(resolve, reject) {
+                options.log("Submitting upload success request/notification for " + id);
 
-            options.log("Submitting upload success request/notification for " + id);
+                requester.initTransport(id)
+                    .withParams(spec)
+                    .send();
 
-            requester.initTransport(id)
-                .withParams(spec)
-                .send();
-
-            pendingRequests[id] = promise;
-
-            return promise;
+                pendingRequests[id] = {resolve: resolve, reject: reject};
+            })
         }
     });
 };

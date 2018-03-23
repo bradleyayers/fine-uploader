@@ -115,7 +115,7 @@
             var uploadData = this._uploadData.retrieve({id: id});
 
             if (uploadData && uploadData.status === qq.status.UPLOAD_FINALIZING) {
-              this.log(qq.format("Ignoring cancel for file ID {} ({}).  Finalizing upload.", id, this.getName(id)), "error");
+                this.log(qq.format("Ignoring cancel for file ID {} ({}).  Finalizing upload.", id, this.getName(id)), "error");
             }
             else {
                 this._handler.cancel(id);
@@ -171,44 +171,49 @@
         // Thumbnail can either be based off of a URL for an image returned
         // by the server in the upload response, or the associated `Blob`.
         drawThumbnail: function(fileId, imgOrCanvas, maxSize, fromServer, customResizeFunction) {
-            var promiseToReturn = new qq.Promise(),
-                fileOrUrl, options;
+            return new Promise(function(resolve, reject) {
+                var error, fileOrUrl, options;
 
-            if (this._imageGenerator) {
-                fileOrUrl = this._thumbnailUrls[fileId];
-                options = {
-                    customResizeFunction: customResizeFunction,
-                    maxSize: maxSize > 0 ? maxSize : null,
-                    scale: maxSize > 0
-                };
+                if (this._imageGenerator) {
+                    fileOrUrl = this._thumbnailUrls[fileId];
+                    options = {
+                        customResizeFunction: customResizeFunction,
+                        maxSize: maxSize > 0 ? maxSize : null,
+                        scale: maxSize > 0
+                    };
 
-                // If client-side preview generation is possible
-                // and we are not specifically looking for the image URl returned by the server...
-                if (!fromServer && qq.supportedFeatures.imagePreviews) {
-                    fileOrUrl = this.getFile(fileId);
-                }
+                    // If client-side preview generation is possible
+                    // and we are not specifically looking for the image URl returned by the server...
+                    if (!fromServer && qq.supportedFeatures.imagePreviews) {
+                        fileOrUrl = this.getFile(fileId);
+                    }
 
-                /* jshint eqeqeq:false,eqnull:true */
-                if (fileOrUrl == null) {
-                    promiseToReturn.failure({container: imgOrCanvas, error: "File or URL not found."});
+                    /* jshint eqeqeq:false,eqnull:true */
+                    if (fileOrUrl == null) {
+                        error = new Error("File or URL not found.");
+                        error.container = imgOrCanvas;
+                        reject(error);
+                    }
+                    else {
+                        this._imageGenerator.generate(fileOrUrl, imgOrCanvas, options).then(
+                            function success(modifiedContainer) {
+                                resolve(modifiedContainer);
+                            },
+
+                            function failure(error) {
+                                var error = new Error(error.message || "Problem generating thumbnail");
+                                error.container = error.container;
+                                reject(error);
+                            }
+                        );
+                    }
                 }
                 else {
-                    this._imageGenerator.generate(fileOrUrl, imgOrCanvas, options).then(
-                        function success(modifiedContainer) {
-                            promiseToReturn.success(modifiedContainer);
-                        },
-
-                        function failure(container, reason) {
-                            promiseToReturn.failure({container: container, error: reason || "Problem generating thumbnail"});
-                        }
-                    );
+                    error = new Error("Missing image generator module")
+                    error.container = imgOrCanvas
+                    reject(error);
                 }
-            }
-            else {
-                promiseToReturn.failure({container: imgOrCanvas, error: "Missing image generator module"});
-            }
-
-            return promiseToReturn;
+            });
         },
 
         getButton: function(fileId) {
@@ -769,8 +774,8 @@
 
                         // If the internal `_onComplete` handler returns a promise, don't invoke the `onComplete` callback
                         // until the promise has been fulfilled.
-                        if (retVal instanceof  qq.Promise) {
-                            retVal.done(function() {
+                        if (retVal instanceof Promise) {
+                            retVal.then(function() {
                                 self._options.callbacks.onComplete(id, name, result, xhr);
                             });
                         }
@@ -779,23 +784,22 @@
                         }
                     },
                     onCancel: function(id, name, cancelFinalizationEffort) {
-                        var promise = new qq.Promise();
+                        return new Promise(function(resolve, reject) {
+                            self._handleCheckedCallback({
+                                name: "onCancel",
+                                callback: qq.bind(self._options.callbacks.onCancel, self, id, name),
+                                onFailure: reject,
+                                onSuccess: function() {
+                                    cancelFinalizationEffort.then(function() {
+                                        self._onCancel(id, name);
+                                    });
 
-                        self._handleCheckedCallback({
-                            name: "onCancel",
-                            callback: qq.bind(self._options.callbacks.onCancel, self, id, name),
-                            onFailure: promise.failure,
-                            onSuccess: function() {
-                                cancelFinalizationEffort.then(function() {
-                                    self._onCancel(id, name);
-                                });
-
-                                promise.success();
-                            },
-                            identifier: id
-                        });
-
-                        return promise;
+                                    resolve();
+                                },
+                                identifier: id
+                            });
+                        })
+                        
                     },
                     onUploadPrep: qq.bind(this._onUploadPrep, this),
                     onUpload: function(id, name) {
@@ -807,7 +811,7 @@
                             return onUploadResult;
                         }
 
-                        return new qq.Promise().success();
+                        return Promise.resolve();
                     },
                     onUploadChunk: function(id, name, chunkData) {
                         self._onUploadChunk(id, chunkData);
@@ -818,7 +822,7 @@
                             return onUploadChunkResult;
                         }
 
-                        return new qq.Promise().success();
+                        return Promise.resolve();
                     },
                     onUploadChunkSuccess: function(id, chunkData, result, xhr) {
                         self._onUploadChunkSuccess(id, chunkData);
@@ -1889,7 +1893,7 @@
          *
          * @param fileWrapper Wrapper containing a `file` along with an `id`
          * @param validationDescriptor Normalized information about the item (`size`, `name`).
-         * @returns qq.Promise with appropriate callbacks invoked depending on the validity of the file
+         * @returns Promise with appropriate callbacks invoked depending on the validity of the file
          * @private
          */
         _validateFileOrBlobData: function(fileWrapper, validationDescriptor) {
@@ -1903,49 +1907,40 @@
                 name = validationDescriptor.name,
                 size = validationDescriptor.size,
                 buttonId = this._getButtonId(fileWrapper.file),
-                validationBase = this._getValidationBase(buttonId),
-                validityChecker = new qq.Promise();
+                validationBase = this._getValidationBase(buttonId);
 
-            validityChecker.then(
-                function() {},
-                function() {
-                    self._fileOrBlobRejected(fileWrapper.id, name);
-                });
-
-            if (qq.isFileOrInput(file) && !this._isAllowedExtension(validationBase.allowedExtensions, name)) {
-                this._itemError("typeError", name, file);
-                return validityChecker.failure();
-            }
-
-            if (!this._options.validation.allowEmpty && size === 0) {
-                this._itemError("emptyError", name, file);
-                return validityChecker.failure();
-            }
-
-            if (size > 0 && validationBase.sizeLimit && size > validationBase.sizeLimit) {
-                this._itemError("sizeError", name, file);
-                return validityChecker.failure();
-            }
-
-            if (size > 0 && size < validationBase.minSizeLimit) {
-                this._itemError("minSizeError", name, file);
-                return validityChecker.failure();
-            }
-
-            if (qq.ImageValidation && qq.supportedFeatures.imagePreviews && qq.isFile(file)) {
-                new qq.ImageValidation(file, qq.bind(self.log, self)).validate(validationBase.image).then(
-                    validityChecker.success,
-                    function(errorCode) {
-                        self._itemError(errorCode + "ImageError", name, file);
-                        validityChecker.failure();
-                    }
-                );
-            }
-            else {
-                validityChecker.success();
-            }
-
-            return validityChecker;
+            return new Promise(function(resolve, reject) {
+                if (qq.isFileOrInput(file) && !this._isAllowedExtension(validationBase.allowedExtensions, name)) {
+                    this._itemError("typeError", name, file);
+                    reject();
+                }
+                else if (!this._options.validation.allowEmpty && size === 0) {
+                    this._itemError("emptyError", name, file);
+                    reject();
+                }
+                else if (size > 0 && validationBase.sizeLimit && size > validationBase.sizeLimit) {
+                    this._itemError("sizeError", name, file);
+                    reject();
+                }
+                else if (size > 0 && size < validationBase.minSizeLimit) {
+                    this._itemError("minSizeError", name, file);
+                    reject();
+                }
+                else if (qq.ImageValidation && qq.supportedFeatures.imagePreviews && qq.isFile(file)) {
+                    new qq.ImageValidation(file, qq.bind(self.log, self)).validate(validationBase.image).then(
+                        resolve,
+                        function(errorCode) {
+                            self._itemError(errorCode + "ImageError", name, file);
+                            reject();
+                        }
+                    );
+                }
+                else {
+                    resolve();
+                }
+            }).catch(function () {
+                self._fileOrBlobRejected(fileWrapper.id, name);
+            })
         },
 
         _wrapCallbacks: function() {

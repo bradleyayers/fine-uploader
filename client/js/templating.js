@@ -143,31 +143,29 @@ qq.Templating = function(spec) {
         // Displays a "waiting for thumbnail" type placeholder image
         // iff we were able to load it during initialization of the templating module.
         displayWaitingImg = function(thumbnail) {
-            var waitingImgPlacement = new qq.Promise();
-
-            cachedWaitingForThumbnailImg.then(function(img) {
-                maybeScalePlaceholderViaCss(img, thumbnail);
-                /* jshint eqnull:true */
-                if (!thumbnail.src) {
-                    thumbnail.src = img.src;
-                    thumbnail.onload = function() {
-                        thumbnail.onload = null;
-                        show(thumbnail);
-                        waitingImgPlacement.success();
-                    };
-                }
-                else {
-                    waitingImgPlacement.success();
-                }
+            return new Promise(function(resolve) {
+                cachedWaitingForThumbnailImg.then(function(img) {
+                    maybeScalePlaceholderViaCss(img, thumbnail);
+                    /* jshint eqnull:true */
+                    if (!thumbnail.src) {
+                        thumbnail.src = img.src;
+                        thumbnail.onload = function() {
+                            thumbnail.onload = null;
+                            show(thumbnail);
+                            resolve();
+                        };
+                    }
+                    else {
+                        resolve();
+                    }
+                })
             }, function() {
                 // In some browsers (such as IE9 and older) an img w/out a src attribute
                 // are displayed as "broken" images, so we should just hide the img tag
                 // if we aren't going to display the "waiting" placeholder.
                 hide(thumbnail);
-                waitingImgPlacement.success();
+                resolve();
             });
-
-            return waitingImgPlacement;
         },
 
         generateNewPreview = function(id, blob, spec) {

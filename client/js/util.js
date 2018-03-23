@@ -427,19 +427,18 @@ var qq = function(element) {
     };
 
     qq.readBlobToHex = function(blob, startOffset, length) {
-        var initialBlob = qq.sliceBlob(blob, startOffset, startOffset + length),
-            fileReader = new FileReader(),
-            promise = new qq.Promise();
+        return new Promise(function(resolve, reject) {
+            var initialBlob = qq.sliceBlob(blob, startOffset, startOffset + length),
+                fileReader = new FileReader();
 
-        fileReader.onload = function() {
-            promise.success(qq.arrayBufferToHex(fileReader.result));
-        };
+            fileReader.onload = function() {
+                resolve(qq.arrayBufferToHex(fileReader.result));
+            };
 
-        fileReader.onerror = promise.failure;
+            fileReader.onerror = reject;
 
-        fileReader.readAsArrayBuffer(initialBlob);
-
-        return promise;
+            fileReader.readAsArrayBuffer(initialBlob);
+        })
     };
 
     qq.extend = function(first, second, extendNested) {

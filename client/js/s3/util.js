@@ -238,115 +238,114 @@ qq.s3.util = qq.s3.util || (function() {
          *
          * @param spec Object with properties: `params`, `type`, `key`, `accessKey`, `acl`, `expectedStatus`, `successRedirectUrl`,
          * `reducedRedundancy`, `region`, `serverSideEncryption`, `version`, and `log()`, along with any options associated with `qq.s3.util.getPolicy()`.
-         * @returns {qq.Promise} Promise that will be fulfilled once all parameters have been determined.
+         * @returns {Promise} Promise that will be fulfilled once all parameters have been determined.
          */
         generateAwsParams: function(spec, signPolicyCallback) {
-            var awsParams = {},
-                customParams = spec.params,
-                promise = new qq.Promise(),
-                sessionToken = spec.sessionToken,
-                drift = spec.clockDrift,
-                type = spec.type,
-                key = spec.key,
-                accessKey = spec.accessKey,
-                acl = spec.acl,
-                expectedStatus = spec.expectedStatus,
-                successRedirectUrl = qq.s3.util.getSuccessRedirectAbsoluteUrl(spec.successRedirectUrl),
-                reducedRedundancy = spec.reducedRedundancy,
-                region = spec.region,
-                serverSideEncryption = spec.serverSideEncryption,
-                signatureVersion = spec.signatureVersion,
-                now = new Date(),
-                log = spec.log,
-                policyJson;
+            return new Promise(function(resolve) {
+                var awsParams = {},
+                    customParams = spec.params,
+                    sessionToken = spec.sessionToken,
+                    drift = spec.clockDrift,
+                    type = spec.type,
+                    key = spec.key,
+                    accessKey = spec.accessKey,
+                    acl = spec.acl,
+                    expectedStatus = spec.expectedStatus,
+                    successRedirectUrl = qq.s3.util.getSuccessRedirectAbsoluteUrl(spec.successRedirectUrl),
+                    reducedRedundancy = spec.reducedRedundancy,
+                    region = spec.region,
+                    serverSideEncryption = spec.serverSideEncryption,
+                    signatureVersion = spec.signatureVersion,
+                    now = new Date(),
+                    log = spec.log,
+                    policyJson;
 
-            spec.date = now;
-            policyJson = qq.s3.util.getPolicy(spec);
+                spec.date = now;
+                policyJson = qq.s3.util.getPolicy(spec);
 
-            awsParams.key = key;
+                awsParams.key = key;
 
-            if (type) {
-                awsParams["Content-Type"] = type;
-            }
-            // jscs:disable requireCamelCaseOrUpperCaseIdentifiers
-            if (expectedStatus) {
-                awsParams.success_action_status = expectedStatus;
-            }
-
-            if (successRedirectUrl) {
-                awsParams.success_action_redirect = successRedirectUrl;
-            }
-            // jscs:enable
-            if (reducedRedundancy) {
-                awsParams[qq.s3.util.REDUCED_REDUNDANCY_PARAM_NAME] = qq.s3.util.REDUCED_REDUNDANCY_PARAM_VALUE;
-            }
-
-            if (serverSideEncryption) {
-                awsParams[qq.s3.util.SERVER_SIDE_ENCRYPTION_PARAM_NAME] = qq.s3.util.SERVER_SIDE_ENCRYPTION_PARAM_VALUE;
-            }
-
-            if (sessionToken) {
-                awsParams[qq.s3.util.SESSION_TOKEN_PARAM_NAME] = sessionToken;
-            }
-
-            awsParams.acl = acl;
-
-            // Custom (user-supplied) params must be prefixed with the value of `qq.s3.util.AWS_PARAM_PREFIX`.
-            // Params such as Cache-Control or Content-Disposition will not be prefixed.
-            // Prefixed param values will be URI encoded as well.
-            qq.each(customParams, function(name, val) {
-                var awsParamName = qq.s3.util._getPrefixedParamName(name);
-
-                if (qq.indexOf(qq.s3.util.UNPREFIXED_PARAM_NAMES, awsParamName) >= 0) {
-                    awsParams[awsParamName] = val;
+                if (type) {
+                    awsParams["Content-Type"] = type;
                 }
-                else {
-                    awsParams[awsParamName] = encodeURIComponent(val);
+                // jscs:disable requireCamelCaseOrUpperCaseIdentifiers
+                if (expectedStatus) {
+                    awsParams.success_action_status = expectedStatus;
                 }
-            });
 
-            if (signatureVersion === 2) {
-                awsParams.AWSAccessKeyId = accessKey;
-            }
-            else if (signatureVersion === 4) {
-                awsParams[qq.s3.util.ALGORITHM_PARAM_NAME] = qq.s3.util.V4_ALGORITHM_PARAM_VALUE;
-                awsParams[qq.s3.util.CREDENTIAL_PARAM_NAME] = qq.s3.util.getV4CredentialsString({date: now, key: accessKey, region: region});
-                awsParams[qq.s3.util.DATE_PARAM_NAME] = qq.s3.util.getV4PolicyDate(now, drift);
-            }
+                if (successRedirectUrl) {
+                    awsParams.success_action_redirect = successRedirectUrl;
+                }
+                // jscs:enable
+                if (reducedRedundancy) {
+                    awsParams[qq.s3.util.REDUCED_REDUNDANCY_PARAM_NAME] = qq.s3.util.REDUCED_REDUNDANCY_PARAM_VALUE;
+                }
 
-            // Invoke a promissory callback that should provide us with a base64-encoded policy doc and an
-            // HMAC signature for the policy doc.
-            signPolicyCallback(policyJson).then(
-                function(policyAndSignature, updatedAccessKey, updatedSessionToken) {
-                    awsParams.policy = policyAndSignature.policy;
+                if (serverSideEncryption) {
+                    awsParams[qq.s3.util.SERVER_SIDE_ENCRYPTION_PARAM_NAME] = qq.s3.util.SERVER_SIDE_ENCRYPTION_PARAM_VALUE;
+                }
 
-                    if (spec.signatureVersion === 2) {
-                        awsParams.signature = policyAndSignature.signature;
+                if (sessionToken) {
+                    awsParams[qq.s3.util.SESSION_TOKEN_PARAM_NAME] = sessionToken;
+                }
 
-                        if (updatedAccessKey) {
-                            awsParams.AWSAccessKeyId = updatedAccessKey;
+                awsParams.acl = acl;
+
+                // Custom (user-supplied) params must be prefixed with the value of `qq.s3.util.AWS_PARAM_PREFIX`.
+                // Params such as Cache-Control or Content-Disposition will not be prefixed.
+                // Prefixed param values will be URI encoded as well.
+                qq.each(customParams, function(name, val) {
+                    var awsParamName = qq.s3.util._getPrefixedParamName(name);
+
+                    if (qq.indexOf(qq.s3.util.UNPREFIXED_PARAM_NAMES, awsParamName) >= 0) {
+                        awsParams[awsParamName] = val;
+                    }
+                    else {
+                        awsParams[awsParamName] = encodeURIComponent(val);
+                    }
+                });
+
+                if (signatureVersion === 2) {
+                    awsParams.AWSAccessKeyId = accessKey;
+                }
+                else if (signatureVersion === 4) {
+                    awsParams[qq.s3.util.ALGORITHM_PARAM_NAME] = qq.s3.util.V4_ALGORITHM_PARAM_VALUE;
+                    awsParams[qq.s3.util.CREDENTIAL_PARAM_NAME] = qq.s3.util.getV4CredentialsString({date: now, key: accessKey, region: region});
+                    awsParams[qq.s3.util.DATE_PARAM_NAME] = qq.s3.util.getV4PolicyDate(now, drift);
+                }
+
+                // Invoke a promissory callback that should provide us with a base64-encoded policy doc and an
+                // HMAC signature for the policy doc.
+                signPolicyCallback(policyJson).then(
+                    function(policyAndSignature, updatedAccessKey, updatedSessionToken) {
+                        awsParams.policy = policyAndSignature.policy;
+
+                        if (spec.signatureVersion === 2) {
+                            awsParams.signature = policyAndSignature.signature;
+
+                            if (updatedAccessKey) {
+                                awsParams.AWSAccessKeyId = updatedAccessKey;
+                            }
                         }
+                        else if (spec.signatureVersion === 4) {
+                            awsParams[qq.s3.util.V4_SIGNATURE_PARAM_NAME] = policyAndSignature.signature;
+                        }
+
+                        if (updatedSessionToken) {
+                            awsParams[qq.s3.util.SESSION_TOKEN_PARAM_NAME] = updatedSessionToken;
+                        }
+
+                        resolve(awsParams);
+                    },
+                    function(errorMessage) {
+                        errorMessage = errorMessage || "Can't continue further with request to S3 as we did not receive " +
+                                                    "a valid signature and policy from the server.";
+
+                        log("Policy signing failed.  " + errorMessage, "error");
+                        reject(new Error(errorMessage));
                     }
-                    else if (spec.signatureVersion === 4) {
-                        awsParams[qq.s3.util.V4_SIGNATURE_PARAM_NAME] = policyAndSignature.signature;
-                    }
-
-                    if (updatedSessionToken) {
-                        awsParams[qq.s3.util.SESSION_TOKEN_PARAM_NAME] = updatedSessionToken;
-                    }
-
-                    promise.success(awsParams);
-                },
-                function(errorMessage) {
-                    errorMessage = errorMessage || "Can't continue further with request to S3 as we did not receive " +
-                                                   "a valid signature and policy from the server.";
-
-                    log("Policy signing failed.  " + errorMessage, "error");
-                    promise.failure(errorMessage);
-                }
-            );
-
-            return promise;
+                );
+            })
         },
 
         /**

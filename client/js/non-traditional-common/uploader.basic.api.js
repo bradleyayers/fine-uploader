@@ -24,7 +24,7 @@
          * @param name Name of the associated item
          * @param result Object created from the server's parsed JSON response.
          * @param xhr Associated XmlHttpRequest, if this was used to send the request.
-         * @returns {boolean || qq.Promise} true/false if success can be determined immediately, otherwise a `qq.Promise`
+         * @returns {boolean || Promise} true/false if success can be determined immediately, otherwise a `Promise`
          * if we need to ask the server.
          * @private
          */

@@ -39,11 +39,10 @@ qq.s3.CompleteMultipartAjaxRequester = function(o) {
      * that will fulfill the associated promise once all headers have been attached or when an error has occurred that
      * prevents headers from being attached.
      *
-     * @returns {qq.Promise}
+     * @returns {Promise}
      */
     function getHeaders(id, uploadId, body) {
         var headers = {},
-            promise = new qq.Promise(),
             bucket = options.getBucket(id),
             host = options.getHost(id),
             signatureConstructor = getSignatureAjaxRequester.constructStringToSign
@@ -53,9 +52,7 @@ qq.s3.CompleteMultipartAjaxRequester = function(o) {
                 .withContentType("application/xml; charset=UTF-8");
 
         // Ask the local server to sign the request.  Use this signature to form the Authorization header.
-        getSignatureAjaxRequester.getSignature(id, {signatureConstructor: signatureConstructor}).then(promise.success, promise.failure);
-
-        return promise;
+        return getSignatureAjaxRequester.getSignature(id, {signatureConstructor: signatureConstructor});
     }
 
     /**
@@ -73,7 +70,8 @@ qq.s3.CompleteMultipartAjaxRequester = function(o) {
             key = options.getKey(id),
             responseDoc = domParser.parseFromString(xhr.responseText, "application/xml"),
             bucketEls = responseDoc.getElementsByTagName("Bucket"),
-            keyEls = responseDoc.getElementsByTagName("Key");
+            keyEls = responseDoc.getElementsByTagName("Key"),
+            error;
 
         delete pendingCompleteRequests[id];
 
@@ -100,10 +98,12 @@ qq.s3.CompleteMultipartAjaxRequester = function(o) {
         }
 
         if (isError) {
-            promise.failure("Problem combining the file parts!", xhr);
+            error = new Error("Problem combining the file parts!");
+            error.xhr = xhr;
+            reject(error);
         }
         else {
-            promise.success({}, xhr);
+            resolve({ response: {}, xhr: xhr });
         }
     }
 
@@ -160,26 +160,25 @@ qq.s3.CompleteMultipartAjaxRequester = function(o) {
          * @param id ID associated with the file.
          * @param uploadId AWS uploadId for this file
          * @param etagEntries Array of objects containing `etag` values and their associated `part` numbers.
-         * @returns {qq.Promise}
+         * @returns {Promise}
          */
         send: function(id, uploadId, etagEntries) {
-            var promise = new qq.Promise(),
-                body = getCompleteRequestBody(etagEntries);
+            var body = getCompleteRequestBody(etagEntries);
 
-            getHeaders(id, uploadId, body).then(function(headers, endOfUrl) {
-                options.log("Submitting S3 complete multipart upload request for " + id);
+            return new Promise(function(resolve, reject) {
+                getHeaders(id, uploadId, body).then(function(headers, endOfUrl) {
+                    options.log("Submitting S3 complete multipart upload request for " + id);
 
-                pendingCompleteRequests[id] = promise;
-                delete headers["Content-Type"];
+                    pendingCompleteRequests[id] = { resolve: resolve, reject: reject };
+                    delete headers["Content-Type"];
 
-                requester.initTransport(id)
-                    .withPath(endOfUrl)
-                    .withHeaders(headers)
-                    .withPayload(body)
-                    .send();
-            }, promise.failure);
-
-            return promise;
+                    requester.initTransport(id)
+                        .withPath(endOfUrl)
+                        .withHeaders(headers)
+                        .withPayload(body)
+                        .send();
+                }, reject);
+            })
         }
     });
 };

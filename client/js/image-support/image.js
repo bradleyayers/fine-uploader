@@ -83,59 +83,60 @@ qq.ImageGenerator = function(log) {
         return false;
     }
 
-    function registerImgLoadListeners(img, promise) {
-        img.onload = function() {
-            img.onload = null;
-            img.onerror = null;
-            promise.success(img);
-        };
+    function registerImgLoadListeners(img) {
+        return new Promise(function(resolve, reject) {
+            img.onload = function() {
+                img.onload = null;
+                img.onerror = null;
+                resolve(img);
+            };
 
-        img.onerror = function() {
-            img.onload = null;
-            img.onerror = null;
-            log("Problem drawing thumbnail!", "error");
-            promise.failure(img, "Problem drawing thumbnail!");
-        };
+            img.onerror = function() {
+                var error = new Error("Problem drawing thumbnail!");
+                error.img = img;
+                img.onload = null;
+                img.onerror = null;
+                log("Problem drawing thumbnail!", "error");
+                reject(error);
+            };
+        });
     }
 
-    function registerCanvasDrawImageListener(canvas, promise) {
-        // The image is drawn on the canvas by a third-party library,
-        // and we want to know when this is completed.  Since the library
-        // may invoke drawImage many times in a loop, we need to be called
-        // back when the image is fully rendered.  So, we are expecting the
-        // code that draws this image to follow a convention that involves a
-        // function attached to the canvas instance be invoked when it is done.
-        canvas.qqImageRendered = function() {
-            promise.success(canvas);
-        };
+    function registerCanvasDrawImageListener(canvas) {
+        return new Promise(function(resolve) {
+            // The image is drawn on the canvas by a third-party library,
+            // and we want to know when this is completed.  Since the library
+            // may invoke drawImage many times in a loop, we need to be called
+            // back when the image is fully rendered.  So, we are expecting the
+            // code that draws this image to follow a convention that involves a
+            // function attached to the canvas instance be invoked when it is done.
+            canvas.qqImageRendered = function() {
+                resolve(canvas);
+            };
+        });
     }
 
-    // Fulfills a `qq.Promise` when an image has been drawn onto the target,
+    // Fulfills a `Promise` when an image has been drawn onto the target,
     // whether that is a <canvas> or an <img>.  The attempt is considered a
     // failure if the target is not an <img> or a <canvas>, or if the drawing
     // attempt was not successful.
-    function registerThumbnailRenderedListener(imgOrCanvas, promise) {
-        var registered = isImg(imgOrCanvas) || isCanvas(imgOrCanvas);
-
+    function registerThumbnailRenderedListener(imgOrCanvas) {
         if (isImg(imgOrCanvas)) {
-            registerImgLoadListeners(imgOrCanvas, promise);
+            return registerImgLoadListeners(imgOrCanvas);
         }
         else if (isCanvas(imgOrCanvas)) {
-            registerCanvasDrawImageListener(imgOrCanvas, promise);
+            return registerCanvasDrawImageListener(imgOrCanvas);
         }
         else {
-            promise.failure(imgOrCanvas);
             log(qq.format("Element container of type {} is not supported!", imgOrCanvas.tagName), "error");
+            return null;
         }
-
-        return registered;
     }
 
     // Draw a preview iff the current UA can natively display it.
     // Also rotate the image if necessary.
     function draw(fileOrBlob, container, options) {
-        var drawPreview = new qq.Promise(),
-            identifier = new qq.Identify(fileOrBlob, log),
+        var identifier = new qq.Identify(fileOrBlob, log),
             maxSize = options.maxSize,
             // jshint eqnull:true
             orient = options.orient == null ? true : options.orient,
@@ -146,60 +147,64 @@ qq.ImageGenerator = function(log) {
                 drawPreview.failure(container, "Browser cannot render image!");
             };
 
-        identifier.isPreviewable().then(
+        return identifier.isPreviewable().then(
             function(mime) {
                 // If options explicitly specify that Orientation is not desired,
                 // replace the orient task with a dummy promise that "succeeds" immediately.
                 var dummyExif = {
                         parse: function() {
-                            return new qq.Promise().success();
+                            return Promise.resolve();
                         }
                     },
                     exif = orient ? new qq.Exif(fileOrBlob, log) : dummyExif,
-                    mpImg = new qq.MegaPixImage(fileOrBlob, megapixErrorHandler);
+                    mpImg = new qq.MegaPixImage(fileOrBlob, megapixErrorHandler),
+                    renderDone = registerThumbnailRenderedListener(container);
 
-                if (registerThumbnailRenderedListener(container, drawPreview)) {
-                    exif.parse().then(
-                        function(exif) {
-                            var orientation = exif && exif.Orientation;
-
-                            mpImg.render(container, {
-                                maxWidth: maxSize,
-                                maxHeight: maxSize,
-                                orientation: orientation,
-                                mime: mime,
-                                resize: options.customResizeFunction
-                            });
-                        },
-
-                        function(failureMsg) {
-                            log(qq.format("EXIF data could not be parsed ({}).  Assuming orientation = 1.", failureMsg));
-
-                            mpImg.render(container, {
-                                maxWidth: maxSize,
-                                maxHeight: maxSize,
-                                mime: mime,
-                                resize: options.customResizeFunction
-                            });
-                        }
-                    );
+                if (renderDone === null) {
+                    return Promise.reject(container);
                 }
+
+                exif.parse().then(
+                    function(exif) {
+                        var orientation = exif && exif.Orientation;
+
+                        mpImg.render(container, {
+                            maxWidth: maxSize,
+                            maxHeight: maxSize,
+                            orientation: orientation,
+                            mime: mime,
+                            resize: options.customResizeFunction
+                        });
+                    },
+
+                    function(failureMsg) {
+                        log(qq.format("EXIF data could not be parsed ({}).  Assuming orientation = 1.", failureMsg));
+
+                        mpImg.render(container, {
+                            maxWidth: maxSize,
+                            maxHeight: maxSize,
+                            mime: mime,
+                            resize: options.customResizeFunction
+                        });
+                    }
+                );
+
+                return renderDone;
             },
 
             function() {
                 log("Not previewable");
-                drawPreview.failure(container, "Not previewable");
+
+                var error = new Error("Not previewable")
+                error.container = container;
+                throw error;
             }
         );
-
-        return drawPreview;
     }
 
-    function drawOnCanvasOrImgFromUrl(url, canvasOrImg, draw, maxSize, customResizeFunction) {
+    function drawOnCanvasOrImgFromUrl(url, canvasOrImg, maxSize, customResizeFunction) {
         var tempImg = new Image(),
-            tempImgRender = new qq.Promise();
-
-        registerThumbnailRenderedListener(tempImg, tempImgRender);
+            tempImgRender = registerThumbnailRenderedListener(tempImg);
 
         if (isCrossOrigin(url)) {
             tempImg.crossOrigin = "anonymous";
@@ -207,9 +212,9 @@ qq.ImageGenerator = function(log) {
 
         tempImg.src = url;
 
-        tempImgRender.then(
+        return tempImgRender.then(
             function rendered() {
-                registerThumbnailRenderedListener(canvasOrImg, draw);
+                var renderDone = registerThumbnailRenderedListener(canvasOrImg);
 
                 var mpImg = new qq.MegaPixImage(tempImg);
                 mpImg.render(canvasOrImg, {
@@ -218,14 +223,13 @@ qq.ImageGenerator = function(log) {
                     mime: determineMimeOfFileName(url),
                     resize: customResizeFunction
                 });
-            },
 
-            draw.failure
-        );
+                return renderDone;
+            });
     }
 
-    function drawOnImgFromUrlWithCssScaling(url, img, draw, maxSize) {
-        registerThumbnailRenderedListener(img, draw);
+    function drawOnImgFromUrlWithCssScaling(url, img, maxSize) {
+        var renderDone = registerThumbnailRenderedListener(img);
         // NOTE: The fact that maxWidth/height is set on the thumbnail for scaled images
         // that must drop back to CSS is known and exploited by the templating module.
         // In this module, we pre-render "waiting" thumbs for all files immediately after they
@@ -236,6 +240,8 @@ qq.ImageGenerator = function(log) {
         });
 
         img.src = url;
+
+        return renderDone;
     }
 
     // Draw a (server-hosted) thumbnail given a URL.
@@ -247,9 +253,9 @@ qq.ImageGenerator = function(log) {
     // which is required to scale a cross-origin image using <canvas> &
     // then export it back to an <img>.
     function drawFromUrl(url, container, options) {
-        var draw = new qq.Promise(),
-            scale = options.scale,
-            maxSize = scale ? options.maxSize : null;
+        var scale = options.scale,
+            maxSize = scale ? options.maxSize : null,
+            renderDone;
 
         // container is an img, scaling needed
         if (scale && isImg(container)) {
@@ -260,26 +266,32 @@ qq.ImageGenerator = function(log) {
                 // but we must fall back to scaling via CSS/styles
                 // if this is a cross-origin image and the UA doesn't support <img> CORS.
                 if (isCrossOrigin(url) && !isImgCorsSupported()) {
-                    drawOnImgFromUrlWithCssScaling(url, container, draw, maxSize);
+                    renderDone = drawOnImgFromUrlWithCssScaling(url, container, maxSize);
                 }
                 else {
-                    drawOnCanvasOrImgFromUrl(url, container, draw, maxSize);
+                    renderDone = drawOnCanvasOrImgFromUrl(url, container, maxSize);
                 }
             }
             else {
-                drawOnImgFromUrlWithCssScaling(url, container, draw, maxSize);
+                renderDone = drawOnImgFromUrlWithCssScaling(url, container, maxSize);
             }
         }
         // container is a canvas, scaling optional
         else if (isCanvas(container)) {
-            drawOnCanvasOrImgFromUrl(url, container, draw, maxSize);
+            renderDone = drawOnCanvasOrImgFromUrl(url, container, maxSize);
         }
         // container is an img & no scaling: just set the src attr to the passed url
-        else if (registerThumbnailRenderedListener(container, draw)) {
-            container.src = url;
+        else {
+            renderDone = registerThumbnailRenderedListener(container);
+            if (renderDone === null) {
+                return Promise.reject(container);
+            }
+            else {
+                container.src = url;
+            }
         }
 
-        return draw;
+        return renderDone;
     }
 
     qq.extend(this, {
@@ -291,7 +303,7 @@ qq.ImageGenerator = function(log) {
          * @param fileBlobOrUrl a `File`, `Blob`, or a URL pointing to the image
          * @param container <img> or <canvas> to contain the preview
          * @param options possible properties include `maxSize` (int), `orient` (bool - default true), resize` (bool - default true), and `customResizeFunction`.
-         * @returns qq.Promise fulfilled when the preview has been drawn, or the attempt has failed
+         * @returns Promise fulfilled when the preview has been drawn, or the attempt has failed
          */
         generate: function(fileBlobOrUrl, container, options) {
             if (qq.isString(fileBlobOrUrl)) {

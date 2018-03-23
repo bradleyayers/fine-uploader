@@ -59,43 +59,30 @@ qq.azure.XhrUploadHandler = function(spec, proxy) {
         };
 
     function combineChunks(id) {
-        var promise = new qq.Promise();
-
-        getSignedUrl(id).then(function(sasUri) {
+        return getSignedUrl(id).then(function(sasUri) {
             var mimeType = handler._getMimeType(id),
                 blockIdEntries = handler._getPersistableData(id).blockIdEntries;
 
-            api.putBlockList.send(id, sasUri, blockIdEntries, mimeType, function(xhr) {
+            return api.putBlockList.send(id, sasUri, blockIdEntries, mimeType, function(xhr) {
                 handler._registerXhr(id, null, xhr, api.putBlockList);
             })
                 .then(function(xhr) {
                     log("Success combining chunks for id " + id);
-                    promise.success({}, xhr);
-                }, function(xhr) {
+                    return {response: {}, xhr: xhr};
+                }, function(xhrError) {
                     log("Attempt to combine chunks failed for id " + id, "error");
-                    handleFailure(xhr, promise);
+                    throw buildError(xhrError.xhr);
                 });
-
-        },
-        promise.failure);
-
-        return promise;
+        });
     }
 
     function determineBlobUrl(id) {
-        var containerUrl = endpointStore.get(id),
-            promise = new qq.Promise(),
-            getBlobNameSuccess = function(blobName) {
-                handler._setThirdPartyFileId(id, blobName);
-                promise.success(containerUrl + "/" + blobName);
-            },
-            getBlobNameFailure = function(reason) {
-                promise.failure(reason);
-            };
+        var containerUrl = endpointStore.get(id);
 
-        onGetBlobName(id).then(getBlobNameSuccess, getBlobNameFailure);
-
-        return promise;
+        return onGetBlobName(id).then(function(blobName) {
+            handler._setThirdPartyFileId(id, blobName);
+            return containerUrl + "/" + blobName;
+        });
     }
 
     function getSignedUrl(id, optChunkIdx) {
@@ -103,39 +90,34 @@ qq.azure.XhrUploadHandler = function(spec, proxy) {
         // as part of the ID when communicating with the SAS ajax requester to avoid collisions.
         var getSasId = optChunkIdx == null ? id : id + "." + optChunkIdx,
 
-            promise = new qq.Promise(),
-            getSasSuccess = function(sasUri) {
-                log("GET SAS request succeeded.");
-                promise.success(sasUri);
-            },
-            getSasFailure = function(reason, getSasXhr) {
-                log("GET SAS request failed: " + reason, "error");
-                promise.failure({error: "Problem communicating with local server"}, getSasXhr);
-            },
-            determineBlobUrlSuccess = function(blobUrl) {
-                api.getSasForPutBlobOrBlock.request(getSasId, blobUrl).then(
-                    getSasSuccess,
-                    getSasFailure
-                );
-            },
-            determineBlobUrlFailure = function(reason) {
-                log(qq.format("Failed to determine blob name for ID {} - {}", id, reason), "error");
-                promise.failure({error: reason});
-            };
-
-        determineBlobUrl(id).then(determineBlobUrlSuccess, determineBlobUrlFailure);
-
-        return promise;
+        return determineBlobUrl(id).then(function(blobUrl) {
+            return api.getSasForPutBlobOrBlock.request(getSasId, blobUrl).then(
+                function(sasUri) {
+                    log("GET SAS request succeeded.");
+                    return sasUri;
+                },
+                function(reason, getSasXhr) {
+                    log("GET SAS request failed: " + reason, "error");
+                    var error = new Error("Problem communicating with local server");
+                    error.xhr = getSasXhr;
+                    throw error;
+                }
+            );
+        }, function(reason) {
+            log(qq.format("Failed to determine blob name for ID {} - {}", id, reason), "error");
+            throw reason;
+        });
     }
 
-    function handleFailure(xhr, promise) {
+    function buildError(xhr) {
         var azureError = qq.azure.util.parseAzureError(xhr.responseText, log),
             errorMsg = "Problem sending file to Azure";
 
-        promise.failure({error: errorMsg,
-            azureError: azureError && azureError.message,
-            reset: xhr.status === 403
-        });
+        var error = new Error(errorMsg);
+        error.azureError = azureError && azureError.message;
+        error.reset = xhr.status === 403;
+
+        return error;
     }
 
     qq.extend(this, {
@@ -143,9 +125,7 @@ qq.azure.XhrUploadHandler = function(spec, proxy) {
             var chunkIdx = params.chunkIdx;
             var id = params.id;
 
-            var promise = new qq.Promise();
-
-            getSignedUrl(id, chunkIdx).then(
+            return getSignedUrl(id, chunkIdx).then(
                 function(sasUri) {
                     var xhr = handler._createXhr(id, chunkIdx),
                     chunkData = handler._getChunkData(id, chunkIdx);
@@ -155,7 +135,7 @@ qq.azure.XhrUploadHandler = function(spec, proxy) {
 
                     // We may have multiple put block requests in progress for the same file, so we must include the chunk idx
                     // as part of the ID when communicating with the put block ajax requester to avoid collisions.
-                    api.putBlock.upload(id + "." + chunkIdx, xhr, sasUri, chunkIdx, chunkData.blob).then(
+                    return api.putBlock.upload(id + "." + chunkIdx, xhr, sasUri, chunkIdx, chunkData.blob).then(
                         function(blockIdEntry) {
                             if (!handler._getPersistableData(id).blockIdEntries) {
                                 handler._getPersistableData(id).blockIdEntries = [];
@@ -163,43 +143,36 @@ qq.azure.XhrUploadHandler = function(spec, proxy) {
 
                             handler._getPersistableData(id).blockIdEntries.push(blockIdEntry);
                             log("Put Block call succeeded for " + id);
-                            promise.success({}, xhr);
+                            return {response: {}, xhr: xhr};
                         },
                         function() {
                             log(qq.format("Put Block call failed for ID {} on part {}", id, chunkIdx), "error");
-                            handleFailure(xhr, promise);
+                            throw buildError(xhr);
                         }
                     );
-                },
-                promise.failure
+                }
             );
-
-            return promise;
         },
 
         uploadFile: function(id) {
-            var promise = new qq.Promise(),
-                fileOrBlob = handler.getFile(id);
+            var fileOrBlob = handler.getFile(id);
 
-            getSignedUrl(id).then(function(sasUri) {
+            return getSignedUrl(id).then(function(sasUri) {
                 var xhr = handler._createXhr(id);
 
                 handler._registerProgressHandler(id);
 
-                api.putBlob.upload(id, xhr, sasUri, fileOrBlob).then(
+                return api.putBlob.upload(id, xhr, sasUri, fileOrBlob).then(
                     function() {
                         log("Put Blob call succeeded for " + id);
-                        promise.success({}, xhr);
+                        return {response: {}, xhr: xhr};
                     },
                     function() {
                         log("Put Blob call failed for " + id, "error");
-                        handleFailure(xhr, promise);
+                        throw buildError(xhr);
                     }
                 );
-            },
-            promise.failure);
-
-            return promise;
+            });
         }
     });
 

@@ -46,13 +46,12 @@ qq.s3.InitiateMultipartAjaxRequester = function(o) {
      * method on the promise will be called.
      *
      * @param id Associated file ID
-     * @returns {qq.Promise}
+     * @returns {Promise}
      */
     function getHeaders(id) {
         var bucket = options.getBucket(id),
             host = options.getHost(id),
             headers = {},
-            promise = new qq.Promise(),
             key = options.getKey(id),
             signatureConstructor;
 
@@ -83,9 +82,7 @@ qq.s3.InitiateMultipartAjaxRequester = function(o) {
             .withHeaders(headers);
 
         // Ask the local server to sign the request.  Use this signature to form the Authorization header.
-        getSignatureAjaxRequester.getSignature(id, {signatureConstructor: signatureConstructor}).then(promise.success, promise.failure);
-
-        return promise;
+        return getSignatureAjaxRequester.getSignature(id, {signatureConstructor: signatureConstructor});
     }
 
     /**
@@ -100,7 +97,7 @@ qq.s3.InitiateMultipartAjaxRequester = function(o) {
         var promise = pendingInitiateRequests[id],
             domParser = new DOMParser(),
             responseDoc = domParser.parseFromString(xhr.responseText, "application/xml"),
-            uploadIdElements, messageElements, uploadId, errorMessage, status;
+            uploadIdElements, messageElements, uploadId, errorMessage, status, error;
 
         delete pendingInitiateRequests[id];
 
@@ -133,11 +130,13 @@ qq.s3.InitiateMultipartAjaxRequester = function(o) {
                 options.log(qq.format("Unexplained error with initiate multipart upload request for {}.  Status code {}.", id, status), "error");
             }
 
-            promise.failure("Problem initiating upload request.", xhr);
+            error = new Error("Problem initiating upload request.");
+            error.xhr = xhr;
+            promise.reject(error);
         }
         else {
             options.log(qq.format("Initiate multipart upload request successful for {}.  Upload ID is {}", id, uploadId));
-            promise.success(uploadId, xhr);
+            promise.resolve({ uploadId: uploadId, xhr: xhr });
         }
     }
 
@@ -161,22 +160,20 @@ qq.s3.InitiateMultipartAjaxRequester = function(o) {
          * success handler. Otherwise, an error message will ultimately be passed into the failure method.
          *
          * @param id The ID associated with the file
-         * @returns {qq.Promise}
+         * @returns {Promise}
          */
         send: function(id) {
-            var promise = new qq.Promise();
+            return new Promise(function(resolve, reject) {
+                getHeaders(id).then(function(headers, endOfUrl) {
+                    options.log("Submitting S3 initiate multipart upload request for " + id);
 
-            getHeaders(id).then(function(headers, endOfUrl) {
-                options.log("Submitting S3 initiate multipart upload request for " + id);
-
-                pendingInitiateRequests[id] = promise;
-                requester.initTransport(id)
-                    .withPath(endOfUrl)
-                    .withHeaders(headers)
-                    .send();
-            }, promise.failure);
-
-            return promise;
+                    pendingInitiateRequests[id] = { resolve: resolve, reject: reject };
+                    requester.initTransport(id)
+                        .withPath(endOfUrl)
+                        .withHeaders(headers)
+                        .send();
+                }, reject);
+            })
         }
     });
 };

@@ -20,15 +20,17 @@ qq.UploadHandler = function(spec) {
 
         cancel: function(id) {
             var self = this,
-                cancelFinalizationEffort = new qq.Promise(),
-                onCancelRetVal = onCancel(id, getName(id), cancelFinalizationEffort);
+                _resolve,
+                onCancelRetVal = onCancel(id, getName(id), new Promise(function(resolve) {
+                    _resolve = resolve;
+                }));
 
             onCancelRetVal.then(function() {
                 if (self.isValid(id)) {
                     fileState[id].canceled = true;
                     self.expunge(id);
                 }
-                cancelFinalizationEffort.success();
+                _resolve();
             });
         },
 

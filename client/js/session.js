@@ -61,7 +61,7 @@ qq.Session = function(spec) {
     }
 
     // Initiate a call to the server that will be used to populate the initial file list.
-    // Returns a `qq.Promise`.
+    // Returns a `Promise`.
     this.refresh = function() {
         /*jshint indent:false */
         var refreshEffort = new qq.Promise(),

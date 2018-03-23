@@ -74,17 +74,12 @@
      */
     function renderImageToDataURL(img, blob, options, doSquash) {
         var canvas = document.createElement("canvas"),
-            mime = options.mime || "image/jpeg",
-            promise = new qq.Promise();
+            mime = options.mime || "image/jpeg";
 
-        renderImageToCanvas(img, blob, canvas, options, doSquash)
+        return renderImageToCanvas(img, blob, canvas, options, doSquash)
             .then(function() {
-                promise.success(
-                    canvas.toDataURL(mime, options.quality || 0.8)
-                );
+                return canvas.toDataURL(mime, options.quality || 0.8);
             });
-
-        return promise;
     }
 
     function maybeCalculateDownsampledDimensions(spec) {
@@ -111,7 +106,6 @@
             width = options.width,
             height = options.height,
             ctx = canvas.getContext("2d"),
-            promise = new qq.Promise(),
             modifiedDimensions;
 
         ctx.save();
@@ -191,9 +185,8 @@
         }
 
         canvas.qqImageRendered && canvas.qqImageRendered();
-        promise.success();
 
-        return promise;
+        return Promise.resolve();
     }
 
     function renderImageToCanvasWithCustomResizer(resizeInfo) {
@@ -202,7 +195,6 @@
             imageHeight = resizeInfo.imageHeight,
             imageWidth = resizeInfo.imageWidth,
             orientation = resizeInfo.orientation,
-            promise = new qq.Promise(),
             resize = resizeInfo.resize,
             sourceCanvas = document.createElement("canvas"),
             sourceCanvasContext = sourceCanvas.getContext("2d"),
@@ -217,7 +209,7 @@
 
         sourceCanvasContext.drawImage(image, 0, 0);
 
-        resize({
+        return resize({
             blob: blob,
             height: targetHeight,
             image: image,
@@ -228,12 +220,8 @@
             .then(
                 function success() {
                     targetCanvas.qqImageRendered && targetCanvas.qqImageRendered();
-                    promise.success();
-                },
-                promise.failure
+                }
             );
-
-        return promise;
     }
 
     /**

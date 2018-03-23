@@ -385,8 +385,8 @@
             }
 
             // The parent may need to perform some async operation before we can accurately determine the status of the upload.
-            if (parentRetVal instanceof qq.Promise) {
-                parentRetVal.done(function(newResult) {
+            if (parentRetVal instanceof Promise) {
+                parentRetVal.then(function(newResult) {
                     completeUpload(newResult);
                 });
 

@@ -165,8 +165,7 @@ qq.extend(qq.Scaler.prototype, {
             throw new qq.Error("Scaling is not supported in this browser!");
         }
 
-        var scalingEffort = new qq.Promise(),
-            log = api.log,
+        var log = api.log,
             file = api.getFile(id),
             uploadData = api.uploadData.retrieve({id: id}),
             name = uploadData && uploadData.name,
@@ -182,28 +181,28 @@ qq.extend(qq.Scaler.prototype, {
             },
             scaler = new qq.Scaler(scalingOptions, log);
 
-        if (!qq.Scaler || !qq.supportedFeatures.imagePreviews || !file) {
-            scalingEffort.failure();
-
-            log("Could not generate requested scaled image for " + id + ".  " +
-                "Scaling is either not possible in this browser, or the file could not be located.", "error");
-        }
-        else {
-            (qq.bind(function() {
-                // Assumption: There will never be more than one record
-                var record = scaler.getFileRecords(uuid, name, file)[0];
-
-                if (record && record.blob instanceof qq.BlobProxy) {
-                    record.blob.create().then(scalingEffort.success, scalingEffort.failure);
-                }
-                else {
-                    log(id + " is not a scalable image!", "error");
-                    scalingEffort.failure();
-                }
-            }, this)());
-        }
-
-        return scalingEffort;
+        return new Promise(function(resolve, reject) {
+            if (!qq.Scaler || !qq.supportedFeatures.imagePreviews || !file) {
+                reject();
+    
+                log("Could not generate requested scaled image for " + id + ".  " +
+                    "Scaling is either not possible in this browser, or the file could not be located.", "error");
+            }
+            else {
+                (qq.bind(function() {
+                    // Assumption: There will never be more than one record
+                    var record = scaler.getFileRecords(uuid, name, file)[0];
+    
+                    if (record && record.blob instanceof qq.BlobProxy) {
+                        record.blob.create().then(resolve, reject);
+                    }
+                    else {
+                        log(id + " is not a scalable image!", "error");
+                        reject();
+                    }
+                }, this)());
+            }
+        })
     },
 
     // NOTE: We cannot reliably determine at this time if the UA supports a specific MIME type for the target format.

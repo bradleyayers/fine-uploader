@@ -92,9 +92,7 @@ if (qqtest.canDownloadFileAsBlob) {
                     objectProperties: {
                         bucket: function(id) {
                             assert.equal(id, 0, "unexpected ID passed to bucket function");
-                            var promise = new qq.Promise();
-                            promise.success("mybucket");
-                            return promise;
+                            return Promise.resolve("mybucket");
                         }
                     },
                     uploadSuccess: {
