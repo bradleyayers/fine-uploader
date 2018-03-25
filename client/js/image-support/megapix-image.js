@@ -201,7 +201,6 @@
             imageHeight = resizeInfo.imageHeight,
             imageWidth = resizeInfo.imageWidth,
             orientation = resizeInfo.orientation,
-            promise = new qq.Promise(),
             resize = resizeInfo.resize,
             sourceCanvas = document.createElement("canvas"),
             sourceCanvasContext = sourceCanvas.getContext("2d"),
@@ -216,23 +215,23 @@
 
         sourceCanvasContext.drawImage(image, 0, 0);
 
-        resize({
-            blob: blob,
-            height: targetHeight,
-            image: image,
-            sourceCanvas: sourceCanvas,
-            targetCanvas: targetCanvas,
-            width: targetWidth
-        })
-            .then(
-                function success() {
-                    targetCanvas.qqImageRendered && targetCanvas.qqImageRendered();
-                    promise.success();
-                },
-                promise.failure
-            );
-
-        return promise;
+        return new Promise(function(resolve, reject) {
+            resize({
+                blob: blob,
+                height: targetHeight,
+                image: image,
+                sourceCanvas: sourceCanvas,
+                targetCanvas: targetCanvas,
+                width: targetWidth
+            })
+                .then(
+                    function success() {
+                        targetCanvas.qqImageRendered && targetCanvas.qqImageRendered();
+                        resolve();
+                    },
+                    reject
+                );
+        });
     }
 
     /**
