@@ -300,39 +300,38 @@ qq.extend(qq.Scaler.prototype, {
             quality = spec.quality,
             failedText = spec.failedText,
             includeExif = spec.includeExif && sourceFile.type === "image/jpeg" && type === "image/jpeg",
-            scalingEffort = new qq.Promise(),
             imageGenerator = new qq.ImageGenerator(log),
             canvas = document.createElement("canvas");
 
         log("Attempting to generate scaled version for " + sourceFile.name);
 
-        imageGenerator.generate(sourceFile, canvas, {maxSize: maxSize, orient: orient, customResizeFunction: customResizeFunction}).then(function() {
-            var scaledImageDataUri = canvas.toDataURL(type, quality),
-                signalSuccess = function() {
-                    log("Success generating scaled version for " + sourceFile.name);
-                    var blob = qq.dataUriToBlob(scaledImageDataUri);
-                    scalingEffort.success(blob);
-                };
+        return new Promise(function(resolve, reject) {
+            imageGenerator.generate(sourceFile, canvas, {maxSize: maxSize, orient: orient, customResizeFunction: customResizeFunction}).then(function() {
+                var scaledImageDataUri = canvas.toDataURL(type, quality),
+                    signalSuccess = function() {
+                        log("Success generating scaled version for " + sourceFile.name);
+                        var blob = qq.dataUriToBlob(scaledImageDataUri);
+                        resolve(blob);
+                    };
 
-            if (includeExif) {
-                self._insertExifHeader(sourceFile, scaledImageDataUri, log).then(function(scaledImageDataUriWithExif) {
-                    scaledImageDataUri = scaledImageDataUriWithExif;
+                if (includeExif) {
+                    self._insertExifHeader(sourceFile, scaledImageDataUri, log).then(function(scaledImageDataUriWithExif) {
+                        scaledImageDataUri = scaledImageDataUriWithExif;
+                        signalSuccess();
+                    },
+                    function() {
+                        log("Problem inserting EXIF header into scaled image.  Using scaled image w/out EXIF data.", "error");
+                        signalSuccess();
+                    });
+                }
+                else {
                     signalSuccess();
-                },
-                function() {
-                    log("Problem inserting EXIF header into scaled image.  Using scaled image w/out EXIF data.", "error");
-                    signalSuccess();
-                });
-            }
-            else {
-                signalSuccess();
-            }
-        }, function() {
-            log("Failed attempt to generate scaled version for " + sourceFile.name, "error");
-            scalingEffort.failure(failedText);
+                }
+            }, function() {
+                log("Failed attempt to generate scaled version for " + sourceFile.name, "error");
+                reject(new Error(failedText));
+            });
         });
-
-        return scalingEffort;
     },
 
     // Attempt to insert the original image's EXIF header into a scaled version.
