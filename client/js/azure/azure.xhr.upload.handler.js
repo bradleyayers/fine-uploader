@@ -89,8 +89,8 @@ qq.azure.XhrUploadHandler = function(spec, proxy) {
                 handler._setThirdPartyFileId(id, blobName);
                 promise.success(containerUrl + "/" + blobName);
             },
-            getBlobNameFailure = function(reason) {
-                promise.failure(reason);
+            getBlobNameFailure = function(error) {
+                promise.failure(error.message);
             };
 
         onGetBlobName(id).then(getBlobNameSuccess, getBlobNameFailure);

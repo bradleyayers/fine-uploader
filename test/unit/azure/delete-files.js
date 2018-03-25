@@ -13,16 +13,18 @@ if (qqtest.canDownloadFileAsBlob) {
                     fileTestHelper.mockXhr();
                     uploader.addFiles({name: "test.jpg", blob: blob});
 
-                    assert.equal(fileTestHelper.getRequests().length, 1, "Wrong # of requests");
-
-                    signatureRequest = fileTestHelper.getRequests()[0];
-                    signatureRequest.respond(200, null, "http://sasuri.com");
-
                     setTimeout(function() {
-                        var uploadRequest = fileTestHelper.getRequests()[1];
-                        uploadRequest.respond(201, null, "");
+                        assert.equal(fileTestHelper.getRequests().length, 1, "Wrong # of requests");
 
-                        callback();
+                        signatureRequest = fileTestHelper.getRequests()[0];
+                        signatureRequest.respond(200, null, "http://sasuri.com");
+
+                        setTimeout(function() {
+                            var uploadRequest = fileTestHelper.getRequests()[1];
+                            uploadRequest.respond(201, null, "");
+
+                            callback();
+                        }, 0);
                     }, 0);
                 });
             };
@@ -155,11 +157,15 @@ if (qqtest.canDownloadFileAsBlob) {
                 deleteFileSignatureRequest = fileTestHelper.getRequests()[2];
                 deleteFileSignatureRequest.respond(200, null, "http://sasuri.com");
 
-                assert.equal(fileTestHelper.getRequests().length, 4);
-                deleteFileRequest = fileTestHelper.getRequests()[3];
-                deleteFileRequest.respond(500, null, null);
+                setTimeout(function () {
+                    assert.equal(fileTestHelper.getRequests().length, 4);
+                    deleteFileRequest = fileTestHelper.getRequests()[3];
+                    deleteFileRequest.respond(500, null, null);
 
-                assert.equal(uploader.getUploads()[0].status, qq.status.DELETE_FAILED);
+                    setTimeout(function () {
+                        assert.equal(uploader.getUploads()[0].status, qq.status.DELETE_FAILED);
+                    }, 0);
+                }, 0);
             });
         });
     });
