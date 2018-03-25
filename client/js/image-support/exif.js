@@ -83,18 +83,16 @@ qq.Exif = function(fileOrBlob, log) {
 
     // Determine the number of directory entries in the EXIF header.
     function getDirEntryCount(app1Start, littleEndian) {
-        var promise = new qq.Promise();
-
-        qq.readBlobToHex(fileOrBlob, app1Start + 18, 2).then(function(hex) {
-            if (littleEndian) {
-                return promise.success(parseLittleEndian(hex));
-            }
-            else {
-                promise.success(parseInt(hex, 16));
-            }
+        return new Promise(function(resolve) {
+            qq.readBlobToHex(fileOrBlob, app1Start + 18, 2).then(function(hex) {
+                if (littleEndian) {
+                    resolve(parseLittleEndian(hex));
+                }
+                else {
+                    resolve(parseInt(hex, 16));
+                }
+            });
         });
-
-        return promise;
     }
 
     // Get the IFD portion of the EXIF header as a hex string.
