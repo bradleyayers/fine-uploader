@@ -428,11 +428,12 @@ if (qqtest.canDownloadFileAsBlob) {
                 }
 
                 it("stores custom resume data with resume record", function(done){
+                    assert.expect(1, done);
+
                     testResumeRecordsLogic(
                         function(id, chunkData) {
                             if (chunkData.partIndex === 1) {
                                 assert.deepEqual(uploader.getResumableFilesData()[0].customResumeData, { custom: "resumedata" });
-                                done();
                             }
                             else {
                                 uploader.setCustomResumeData(0, { custom: "resumedata" });

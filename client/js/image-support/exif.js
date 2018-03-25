@@ -34,33 +34,28 @@ qq.Exif = function(fileOrBlob, log) {
 
     // Find the byte offset, of Application Segment 1 (EXIF).
     // External callers need not supply any arguments.
-    function seekToApp1(offset, promise) {
-        var theOffset = offset,
-            thePromise = promise;
-        if (theOffset === undefined) {
-            theOffset = 2;
-            thePromise = new qq.Promise();
-        }
+    function seekToApp1(offset) {
+        var theOffset = offset === undefined ? 2 : offset;
 
-        qq.readBlobToHex(fileOrBlob, theOffset, 4).then(function(hex) {
-            var match = /^ffe([0-9])/.exec(hex),
-                segmentLength;
+        return new Promise(function(resolve, reject) {
+            qq.readBlobToHex(fileOrBlob, theOffset, 4).then(function(hex) {
+                var match = /^ffe([0-9])/.exec(hex),
+                    segmentLength;
 
-            if (match) {
-                if (match[1] !== "1") {
-                    segmentLength = parseInt(hex.slice(4, 8), 16);
-                    seekToApp1(theOffset + segmentLength + 2, thePromise);
+                if (match) {
+                    if (match[1] !== "1") {
+                        segmentLength = parseInt(hex.slice(4, 8), 16);
+                        seekToApp1(theOffset + segmentLength + 2).then(resolve, reject);
+                    }
+                    else {
+                        resolve(theOffset);
+                    }
                 }
                 else {
-                    thePromise.success(theOffset);
+                    reject(new Error("No EXIF header to be found!"));
                 }
-            }
-            else {
-                thePromise.failure("No EXIF header to be found!");
-            }
+            });
         });
-
-        return thePromise;
     }
 
     // Find the byte offset of Application Segment 1 (EXIF) for valid JPEGs only.
@@ -76,7 +71,7 @@ qq.Exif = function(fileOrBlob, log) {
                     promise.success(offset);
                 },
                 function(error) {
-                    promise.failure(error);
+                    promise.failure(error.message);
                 });
             }
         });
