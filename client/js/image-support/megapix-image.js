@@ -74,17 +74,16 @@
      */
     function renderImageToDataURL(img, blob, options, doSquash) {
         var canvas = document.createElement("canvas"),
-            mime = options.mime || "image/jpeg",
-            promise = new qq.Promise();
+            mime = options.mime || "image/jpeg";
 
-        renderImageToCanvas(img, blob, canvas, options, doSquash)
-            .then(function() {
-                promise.success(
-                    canvas.toDataURL(mime, options.quality || 0.8)
-                );
-            });
-
-        return promise;
+        return new Promise(function(resolve) {
+            renderImageToCanvas(img, blob, canvas, options, doSquash)
+                .then(function() {
+                    resolve(
+                        canvas.toDataURL(mime, options.quality || 0.8)
+                    );
+                });
+        });
     }
 
     function maybeCalculateDownsampledDimensions(spec) {
