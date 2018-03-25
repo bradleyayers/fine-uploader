@@ -125,9 +125,9 @@ qq.s3.FormUploadHandler = function(options, proxy) {
             });
 
             promise.success(form);
-        }, function(errorMessage) {
-            promise.failure(errorMessage);
-            handleFinishedUpload(id, iframe, fileName, {error: errorMessage});
+        }, function(error) {
+            promise.failure(error.message);
+            handleFinishedUpload(id, iframe, fileName, {error: error.message});
         });
 
         return promise;

@@ -358,8 +358,8 @@ qq.s3.XhrUploadHandler = function(spec, proxy) {
                     },
 
                     // Failure - we couldn't determine some params (likely the signature)
-                    function(errorMessage) {
-                        promise.failure({error: errorMessage});
+                    function(error) {
+                        promise.failure({error: error.message});
                     }
                 );
 
