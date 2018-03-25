@@ -188,7 +188,9 @@ qq.Exif = function(fileOrBlob, log) {
                             log("Successfully parsed some EXIF tags");
 
                             parser.success(tagValues);
-                        }, onParseFailure);
+                        }, function (error) {
+                            onParseFailure(error.message);
+                        });
                     }, onParseFailure);
                 }, onParseFailure);
             }, onParseFailure);
