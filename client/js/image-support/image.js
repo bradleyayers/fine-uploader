@@ -172,8 +172,8 @@ qq.ImageGenerator = function(log) {
                             });
                         },
 
-                        function(failureMsg) {
-                            log(qq.format("EXIF data could not be parsed ({}).  Assuming orientation = 1.", failureMsg));
+                        function(error) {
+                            log(qq.format("EXIF data could not be parsed ({}).  Assuming orientation = 1.", error.message));
 
                             mpImg.render(container, {
                                 maxWidth: maxSize,

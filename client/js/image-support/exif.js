@@ -149,48 +149,39 @@ qq.Exif = function(fileOrBlob, log) {
         /**
          * Attempt to parse the EXIF header for the `Blob` associated with this instance.
          *
-         * @returns {qq.Promise} To be fulfilled when the parsing is complete.
+         * @returns {Promise} To be resolved when the parsing is complete.
          * If successful, the parsed EXIF header as an object will be included.
          */
         parse: function() {
-            var parser = new qq.Promise(),
-                onParseFailure = function(message) {
-                    log(qq.format("EXIF header parse failed: '{}' ", message));
-                    parser.failure(message);
-                };
+            return new Promise(function(resolve, reject) {
+                function onParseFailure(error) {
+                    log(qq.format("EXIF header parse failed: '{}' ", error.message));
+                    reject(error);
+                }
 
-            getApp1Offset().then(function(app1Offset) {
-                log(qq.format("Moving forward with EXIF header parsing for '{}'", fileOrBlob.name === undefined ? "blob" : fileOrBlob.name));
+                getApp1Offset().then(function(app1Offset) {
+                    log(qq.format("Moving forward with EXIF header parsing for '{}'", fileOrBlob.name === undefined ? "blob" : fileOrBlob.name));
 
-                isLittleEndian(app1Offset).then(function(littleEndian) {
+                    isLittleEndian(app1Offset).then(function(littleEndian) {
 
-                    log(qq.format("EXIF Byte order is {} endian", littleEndian ? "little" : "big"));
+                        log(qq.format("EXIF Byte order is {} endian", littleEndian ? "little" : "big"));
 
-                    getDirEntryCount(app1Offset, littleEndian).then(function(dirEntryCount) {
+                        getDirEntryCount(app1Offset, littleEndian).then(function(dirEntryCount) {
 
-                        log(qq.format("Found {} APP1 directory entries", dirEntryCount));
+                            log(qq.format("Found {} APP1 directory entries", dirEntryCount));
 
-                        getIfd(app1Offset, dirEntryCount).then(function(ifdHex) {
-                            var dirEntries = getDirEntries(ifdHex),
-                                tagValues = getTagValues(littleEndian, dirEntries);
+                            getIfd(app1Offset, dirEntryCount).then(function(ifdHex) {
+                                var dirEntries = getDirEntries(ifdHex),
+                                    tagValues = getTagValues(littleEndian, dirEntries);
 
-                            log("Successfully parsed some EXIF tags");
+                                log("Successfully parsed some EXIF tags");
 
-                            parser.success(tagValues);
-                        }, function (error) {
-                            onParseFailure(error.message);
-                        });
-                    }, function (error) {
-                        onParseFailure(error.message);
-                    });
-                }, function (error) {
-                    onParseFailure(error.message);
-                });
-            }, function (error) {
-                onParseFailure(error.message);
+                                resolve(tagValues);
+                            }, onParseFailure);
+                        }, onParseFailure);
+                    }, onParseFailure);
+                }, onParseFailure);
             });
-
-            return parser;
         }
     });
 
