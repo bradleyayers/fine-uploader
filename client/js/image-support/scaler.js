@@ -339,22 +339,21 @@ qq.extend(qq.Scaler.prototype, {
         "use strict";
 
         var reader = new FileReader(),
-            insertionEffort = new qq.Promise(),
             originalImageDataUri = "";
 
-        reader.onload = function() {
-            originalImageDataUri = reader.result;
-            insertionEffort.success(qq.ExifRestorer.restore(originalImageDataUri, scaledImageDataUri));
-        };
+        return new Promise(function (resolve, reject) {
+            reader.onload = function() {
+                originalImageDataUri = reader.result;
+                resolve(qq.ExifRestorer.restore(originalImageDataUri, scaledImageDataUri));
+            };
 
-        reader.onerror = function() {
-            log("Problem reading " + originalImage.name + " during attempt to transfer EXIF data to scaled version.", "error");
-            insertionEffort.failure();
-        };
+            reader.onerror = function() {
+                log("Problem reading " + originalImage.name + " during attempt to transfer EXIF data to scaled version.", "error");
+                reject();
+            };
 
-        reader.readAsDataURL(originalImage);
-
-        return insertionEffort;
+            reader.readAsDataURL(originalImage);
+        });
     },
 
     _dataUriToBlob: function(dataUri) {
