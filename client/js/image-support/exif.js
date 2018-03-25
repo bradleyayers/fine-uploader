@@ -60,23 +60,16 @@ qq.Exif = function(fileOrBlob, log) {
 
     // Find the byte offset of Application Segment 1 (EXIF) for valid JPEGs only.
     function getApp1Offset() {
-        var promise = new qq.Promise();
-
-        qq.readBlobToHex(fileOrBlob, 0, 6).then(function(hex) {
-            if (hex.indexOf("ffd8") !== 0) {
-                promise.failure("Not a valid JPEG!");
-            }
-            else {
-                seekToApp1().then(function(offset) {
-                    promise.success(offset);
-                },
-                function(error) {
-                    promise.failure(error.message);
-                });
-            }
+        return new Promise(function(resolve, reject) {
+            qq.readBlobToHex(fileOrBlob, 0, 6).then(function(hex) {
+                if (hex.indexOf("ffd8") !== 0) {
+                    reject(new Error("Not a valid JPEG!"));
+                }
+                else {
+                    seekToApp1().then(resolve, reject);
+                }
+            });
         });
-
-        return promise;
     }
 
     // Determine the byte ordering of the EXIF header.
@@ -193,7 +186,9 @@ qq.Exif = function(fileOrBlob, log) {
                         });
                     }, onParseFailure);
                 }, onParseFailure);
-            }, onParseFailure);
+            }, function (error) {
+                onParseFailure(error.message);
+            });
 
             return parser;
         }
