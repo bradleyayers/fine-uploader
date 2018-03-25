@@ -74,13 +74,11 @@ qq.Exif = function(fileOrBlob, log) {
 
     // Determine the byte ordering of the EXIF header.
     function isLittleEndian(app1Start) {
-        var promise = new qq.Promise();
-
-        qq.readBlobToHex(fileOrBlob, app1Start + 10, 2).then(function(hex) {
-            promise.success(hex === "4949");
+        return new Promise(function(resolve) {
+            qq.readBlobToHex(fileOrBlob, app1Start + 10, 2).then(function(hex) {
+                resolve(hex === "4949");
+            });
         });
-
-        return promise;
     }
 
     // Determine the number of directory entries in the EXIF header.
@@ -184,8 +182,12 @@ qq.Exif = function(fileOrBlob, log) {
                         }, function (error) {
                             onParseFailure(error.message);
                         });
-                    }, onParseFailure);
-                }, onParseFailure);
+                    }, function (error) {
+                        onParseFailure(error.message);
+                    });
+                }, function (error) {
+                    onParseFailure(error.message);
+                });
             }, function (error) {
                 onParseFailure(error.message);
             });
