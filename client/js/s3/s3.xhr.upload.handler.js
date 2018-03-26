@@ -384,20 +384,23 @@ qq.s3.XhrUploadHandler = function(spec, proxy) {
              */
             bucket: {
                 promise: function(id) {
-                    var promise = new qq.Promise(),
-                        cachedBucket = handler._getFileState(id).bucket;
+                    var cachedBucket = handler._getFileState(id).bucket;
 
-                    if (cachedBucket) {
-                        promise.success(cachedBucket);
-                    }
-                    else {
-                        onGetBucket(id).then(function(bucket) {
-                            handler._getFileState(id).bucket = bucket;
-                            promise.success(bucket);
-                        }, promise.failure);
-                    }
-
-                    return promise;
+                    return new Promise(function(resolve, reject) {
+                        if (cachedBucket) {
+                            resolve(cachedBucket);
+                        }
+                        else {
+                            onGetBucket(id).then(function(bucket) {
+                                handler._getFileState(id).bucket = bucket;
+                                resolve(bucket);
+                            }, function(errorReason) {
+                                var error = new Error("Failed to get bucket");
+                                error.error = errorReason;
+                                reject(error);
+                            });
+                        }
+                    });
                 },
 
                 getName: function(id) {
@@ -561,7 +564,7 @@ qq.s3.XhrUploadHandler = function(spec, proxy) {
                                     chunked.send(id, optChunkIdx).then(resolve, reject);
                                 }
                             });
-                        });
+                        }, reject);
                     },
                     function(errorReason) {
                         var error = new Error(errorReason);
