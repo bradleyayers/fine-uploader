@@ -30,47 +30,45 @@ qq.DragAndDrop = function(o) {
     }
 
     function traverseFileTree(entry) {
-        var parseEntryPromise = new qq.Promise();
-
-        if (entry.isFile) {
-            entry.file(function(file) {
-                file.qqPath = extractDirectoryPath(entry);
-                droppedFiles.push(file);
-                parseEntryPromise.success();
-            },
-            function(fileError) {
-                options.callbacks.dropLog("Problem parsing '" + entry.fullPath + "'.  FileError code " + fileError.code + ".", "error");
-                parseEntryPromise.failure();
-            });
-        }
-        else if (entry.isDirectory) {
-            getFilesInDirectory(entry).then(
-                function allEntriesRead(entries) {
-                    var entriesLeft = entries.length;
-
-                    qq.each(entries, function(idx, entry) {
-                        traverseFileTree(entry).done(function() {
-                            entriesLeft -= 1;
-
-                            if (entriesLeft === 0) {
-                                parseEntryPromise.success();
-                            }
-                        });
-                    });
-
-                    if (!entries.length) {
-                        parseEntryPromise.success();
-                    }
+        return new Promise(function(resolve, reject) {
+            if (entry.isFile) {
+                entry.file(function(file) {
+                    file.qqPath = extractDirectoryPath(entry);
+                    droppedFiles.push(file);
+                    resolve();
                 },
-
-                function readFailure(fileError) {
+                function(fileError) {
                     options.callbacks.dropLog("Problem parsing '" + entry.fullPath + "'.  FileError code " + fileError.code + ".", "error");
-                    parseEntryPromise.failure();
-                }
-            );
-        }
+                    reject();
+                });
+            }
+            else if (entry.isDirectory) {
+                getFilesInDirectory(entry).then(
+                    function allEntriesRead(entries) {
+                        var entriesLeft = entries.length;
 
-        return parseEntryPromise;
+                        qq.each(entries, function(idx, entry) {
+                            traverseFileTree(entry).done(function() {
+                                entriesLeft -= 1;
+
+                                if (entriesLeft === 0) {
+                                    resolve();
+                                }
+                            });
+                        });
+
+                        if (!entries.length) {
+                            resolve();
+                        }
+                    },
+
+                    function readFailure(fileError) {
+                        options.callbacks.dropLog("Problem parsing '" + entry.fullPath + "'.  FileError code " + fileError.code + ".", "error");
+                        reject();
+                    }
+                );
+            }
+        });
     }
 
     function extractDirectoryPath(entry) {
