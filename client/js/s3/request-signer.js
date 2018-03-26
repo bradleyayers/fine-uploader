@@ -572,7 +572,6 @@ qq.s3.RequestSigner = function(o) {
 
                 getToSign: function(id) {
                     var sessionToken = credentialsProvider.get().sessionToken,
-                        promise = new qq.Promise(),
                         adjustedDate = new Date(Date.now() + options.signatureSpec.drift);
 
                     headers["x-amz-date"] = adjustedDate.toUTCString();
@@ -581,7 +580,7 @@ qq.s3.RequestSigner = function(o) {
                         headers[qq.s3.util.SESSION_TOKEN_PARAM_NAME] = sessionToken;
                     }
 
-                    getStringToSignArtifacts(id, options.signatureSpec.version, {
+                    return getStringToSignArtifacts(id, options.signatureSpec.version, {
                         bucket: bucket,
                         content: content,
                         contentType: contentType,
@@ -593,7 +592,7 @@ qq.s3.RequestSigner = function(o) {
                         uploadId: uploadId
                     }).then(function(_artifacts_) {
                         artifacts = _artifacts_;
-                        promise.success({
+                        return {
                             headers: (function() {
                                 if (contentType) {
                                     headers["Content-Type"] = contentType;
@@ -607,12 +606,8 @@ qq.s3.RequestSigner = function(o) {
                             signedHeaders: artifacts.signedHeaders,
                             stringToSign: artifacts.toSign,
                             stringToSignRaw: artifacts.toSignRaw
-                        });
-                    }, function (err) {
-                        promise.failure(err);
+                        };
                     });
-
-                    return promise;
                 },
 
                 getHeaders: function() {
