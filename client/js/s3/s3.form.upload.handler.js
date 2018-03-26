@@ -131,50 +131,52 @@ qq.s3.FormUploadHandler = function(options, proxy) {
     function handleUpload(id) {
         var iframe = handler._createIframe(id),
             input = handler.getInput(id),
-            promise = new qq.Promise();
+            error;
 
-        createForm(id, iframe).then(function(form) {
-            form.appendChild(input);
+        return new Promise(function(resolve, reject) {
+            createForm(id, iframe).then(function(form) {
+                form.appendChild(input);
 
-            // Register a callback when the response comes in from S3
-            handler._attachLoadEvent(iframe, function(response) {
-                log("iframe loaded");
+                // Register a callback when the response comes in from S3
+                handler._attachLoadEvent(iframe, function(response) {
+                    log("iframe loaded");
 
-                // If the common response handler has determined success or failure immediately
-                if (response) {
-                    // If there is something fundamentally wrong with the response (such as iframe content is not accessible)
-                    if (response.success === false) {
-                        log("Amazon likely rejected the upload request", "error");
-                        promise.failure(response);
+                    // If the common response handler has determined success or failure immediately
+                    if (response) {
+                        // If there is something fundamentally wrong with the response (such as iframe content is not accessible)
+                        if (response.success === false) {
+                            error = new Error("Amazon likely rejected the upload request");
+                            error.response = response;
+                            log(error.message, "error");
+                            reject(error);
+                        }
                     }
-                }
-                // The generic response (iframe onload) handler was not able to make a determination regarding the success of the request
-                else {
-                    response = {};
-                    response.success = isValidResponse(id, iframe);
-
-                    // If the more specific response handle detected a problem with the response from S3
-                    if (response.success === false) {
-                        log("A success response was received by Amazon, but it was invalid in some way.", "error");
-                        promise.failure(response);
-                    }
+                    // The generic response (iframe onload) handler was not able to make a determination regarding the success of the request
                     else {
-                        qq.extend(response, qq.s3.util.parseIframeResponse(iframe));
-                        promise.success(response);
+                        response = {};
+                        response.success = isValidResponse(id, iframe);
+
+                        // If the more specific response handle detected a problem with the response from S3
+                        if (response.success === false) {
+                            error = new Error("A success response was received by Amazon, but it was invalid in some way.");
+                            error.response = response;
+                            log(error.message, "error");
+                            reject(error);
+                        }
+                        else {
+                            qq.extend(response, qq.s3.util.parseIframeResponse(iframe));
+                            resolve(response);
+                        }
                     }
-                }
 
-                handleFinishedUpload(id, iframe);
-            });
+                    handleFinishedUpload(id, iframe);
+                });
 
-            log("Sending upload request for " + id);
-            form.submit();
-            qq(form).remove();
-        }, function (error) {
-            promise.failure(error.message);
+                log("Sending upload request for " + id);
+                form.submit();
+                qq(form).remove();
+            }, reject);
         });
-
-        return promise;
     }
 
     function handleFinishedUpload(id, iframe) {
@@ -204,20 +206,12 @@ qq.s3.FormUploadHandler = function(options, proxy) {
             return new Promise(function(resolve, reject) {
                 if (handler.getThirdPartyFileId(id)) {
                     if (handler._getFileState(id).bucket) {
-                        handleUpload(id).then(resolve, function (response) {
-                            var error = new Error("Upload failed");
-                            error.response = response;
-                            reject(error);
-                        });
+                        handleUpload(id).then(resolve, reject);
                     }
                     else {
                         onGetBucket(id).then(function(bucket) {
                             handler._getFileState(id).bucket = bucket;
-                            handleUpload(id).then(resolve, function (response) {
-                                var error = new Error("Upload failed");
-                                error.response = response;
-                                reject(error);
-                            });
+                            handleUpload(id).then(resolve, reject);
                         });
                     }
                 }
@@ -228,16 +222,12 @@ qq.s3.FormUploadHandler = function(options, proxy) {
                         onGetBucket(id).then(function(bucket) {
                             handler._getFileState(id).bucket = bucket;
                             handler._setThirdPartyFileId(id, key);
-                            handleUpload(id).then(resolve, function (response) {
-                                var error = new Error("Upload failed");
-                                error.response = response;
-                                reject(error);
-                            });
+                            handleUpload(id).then(resolve, reject);
                         }, function(errorReason) {
-                            reject(new Promise(errorReason));
+                            reject(new Error(errorReason));
                         });
                     }, function(errorReason) {
-                        reject(new Promise(errorReason));
+                        reject(new Error(errorReason));
                     });
                 }
             });
