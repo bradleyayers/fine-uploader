@@ -101,33 +101,29 @@ qq.ImageValidation = function(blob, log) {
      * Validate the associated blob.
      *
      * @param limits
-     * @returns {qq.Promise} `success` is called on the promise is the image is valid or
-     * if the blob is not an image, or if the image is not verifiable.
-     * Otherwise, `failure` with the name of the failing limit.
+     * @returns {Promise} Resolved if the image is valid or if the blob is
+     * not an image, or if the image is not verifiable. Otherwise, it is
+     * rejected with an error with a `failingLimit: string` property .
      */
     this.validate = function(limits) {
-        var validationEffort = new qq.Promise();
-
         log("Attempting to validate image.");
 
         if (hasNonZeroLimits(limits)) {
-            getWidthHeight().then(function(dimensions) {
-                var failingLimit = getFailingLimit(limits, dimensions);
+            return getWidthHeight().then(function(dimensions) {
+                var failingLimit = getFailingLimit(limits, dimensions),
+                    error;
 
                 if (failingLimit) {
-                    validationEffort.failure(failingLimit);
-                }
-                else {
-                    validationEffort.success();
+                    error = new Error(qq.format("Invalid image, failing limit: {}", failingLimit));
+                    error.failingLimit = failingLimit;
+                    throw error;
                 }
             }, function() {
-                validationEffort.success();
+                // Not being an image is considered valid.
             });
         }
         else {
-            validationEffort.success();
+            return Promise.resolve();
         }
-
-        return validationEffort;
     };
 };

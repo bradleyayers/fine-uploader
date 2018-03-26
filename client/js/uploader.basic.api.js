@@ -1935,7 +1935,8 @@
             if (qq.ImageValidation && qq.supportedFeatures.imagePreviews && qq.isFile(file)) {
                 new qq.ImageValidation(file, qq.bind(self.log, self)).validate(validationBase.image).then(
                     validityChecker.success,
-                    function(errorCode) {
+                    function(error) {
+                        var errorCode = error.failingLimit;
                         self._itemError(errorCode + "ImageError", name, file);
                         validityChecker.failure();
                     }
