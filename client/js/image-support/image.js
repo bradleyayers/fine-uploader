@@ -152,7 +152,7 @@ qq.ImageGenerator = function(log) {
                 // replace the orient task with a dummy promise that "succeeds" immediately.
                 var dummyExif = {
                         parse: function() {
-                            return new qq.Promise().success();
+                            return Promise.resolve();
                         }
                     },
                     exif = orient ? new qq.Exif(fileOrBlob, log) : dummyExif,
