@@ -47,17 +47,19 @@ describe("S3 serverless upload tests", function() {
                             assert.equal(requestParams[qq.s3.util.SESSION_TOKEN_PARAM_NAME], null);
                             assert.equal(requestParams["x-amz-storage-class"], null);
                             assert.equal(requestParams["x-amz-meta-qqfilename"], "test");
-                            assert.equal(requestParams.key, uploader.getKey(0));
-                            assert.equal(requestParams.acl, "private");
-                            assert.ok(requestParams.file);
+                            uploader.getKey(0).then(function(key0) {
+                                assert.equal(requestParams.key, key0);
+                                assert.equal(requestParams.acl, "private");
+                                assert.ok(requestParams.file);
 
-                            assert.equal(requestParams["x-amz-algorithm"], "AWS4-HMAC-SHA256");
-                            assert.ok(new RegExp(testAccessKey + "\\/\\d{8}\\/us-east-1\\/s3\\/aws4_request").test(requestParams["x-amz-credential"]));
-                            assert.ok(requestParams["x-amz-date"]);
-                            assert.ok(requestParams["x-amz-signature"]);
-                            assert.ok(requestParams.policy);
+                                assert.equal(requestParams["x-amz-algorithm"], "AWS4-HMAC-SHA256");
+                                assert.ok(new RegExp(testAccessKey + "\\/\\d{8}\\/us-east-1\\/s3\\/aws4_request").test(requestParams["x-amz-credential"]));
+                                assert.ok(requestParams["x-amz-date"]);
+                                assert.ok(requestParams["x-amz-signature"]);
+                                assert.ok(requestParams.policy);
 
-                            done();
+                                done();
+                            });
                         }, 0);
                     });
                 });
@@ -95,15 +97,17 @@ describe("S3 serverless upload tests", function() {
                         assert.equal(requestParams[qq.s3.util.SESSION_TOKEN_PARAM_NAME], null);
                         assert.equal(requestParams["x-amz-storage-class"], null);
                         assert.equal(requestParams["x-amz-meta-qqfilename"], "test");
-                        assert.equal(requestParams.key, uploader.getKey(0));
-                        assert.equal(requestParams.AWSAccessKeyId, testAccessKey);
-                        assert.equal(requestParams.acl, "private");
-                        assert.ok(requestParams.file);
+                        uploader.getKey(0).then(function(key0) {
+                            assert.equal(requestParams.key, key0);
+                            assert.equal(requestParams.AWSAccessKeyId, testAccessKey);
+                            assert.equal(requestParams.acl, "private");
+                            assert.ok(requestParams.file);
 
-                        assert.ok(requestParams.signature);
-                        assert.ok(requestParams.policy);
+                            assert.ok(requestParams.signature);
+                            assert.ok(requestParams.policy);
 
-                        done();
+                            done();
+                        });
                     }, 0);
                 });
             });
@@ -171,14 +175,16 @@ describe("S3 serverless upload tests", function() {
                         assert.equal(requestParams[qq.s3.util.SESSION_TOKEN_PARAM_NAME], testSessionToken);
                         assert.equal(requestParams["x-amz-storage-class"], null);
                         assert.equal(requestParams["x-amz-meta-qqfilename"], "test");
-                        assert.equal(requestParams.key, uploader.getKey(0));
-                        assert.equal(requestParams.AWSAccessKeyId, testAccessKey);
-                        assert.equal(requestParams.acl, "private");
-                        assert.ok(requestParams.file);
+                        uploader.getKey(0).then(function (key0) {
+                            assert.equal(requestParams.key, key0);
+                            assert.equal(requestParams.AWSAccessKeyId, testAccessKey);
+                            assert.equal(requestParams.acl, "private");
+                            assert.ok(requestParams.file);
 
-                        assert.ok(requestParams.signature);
-                        assert.ok(requestParams.policy);
-                        done();
+                            assert.ok(requestParams.signature);
+                            assert.ok(requestParams.policy);
+                            done();
+                        });
                     }, 0);
                 });
             });
@@ -224,15 +230,17 @@ describe("S3 serverless upload tests", function() {
                             assert.equal(requestParams[qq.s3.util.SESSION_TOKEN_PARAM_NAME], testSessionTokenFromCallback);
                             assert.equal(requestParams["x-amz-storage-class"], null);
                             assert.equal(requestParams["x-amz-meta-qqfilename"], "test");
-                            assert.equal(requestParams.key, uploader.getKey(0));
-                            assert.equal(requestParams.AWSAccessKeyId, testAccessKeyFromCallback);
-                            assert.equal(requestParams.acl, "private");
-                            assert.ok(requestParams.file);
+                            uploader.getKey(0).then(function(key0) {
+                                assert.equal(requestParams.key, key0);
+                                assert.equal(requestParams.AWSAccessKeyId, testAccessKeyFromCallback);
+                                assert.equal(requestParams.acl, "private");
+                                assert.ok(requestParams.file);
 
-                            assert.ok(requestParams.signature);
-                            assert.ok(requestParams.policy);
+                                assert.ok(requestParams.signature);
+                                assert.ok(requestParams.policy);
 
-                            done();
+                                done();
+                            });
                         }, 10);
                     });
                 }

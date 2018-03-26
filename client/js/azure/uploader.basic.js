@@ -77,12 +77,12 @@
         },
 
         _getEndpointSpecificParams: function(id) {
-            return {
+            return Promise.resolve({
                 blob: this.getBlobName(id),
                 uuid: this.getUuid(id),
                 name: this.getName(id),
                 container: this._endpointStore.get(id)
-            };
+            });
         },
 
         _createUploadHandler: function() {

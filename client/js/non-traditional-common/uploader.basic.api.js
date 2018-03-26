@@ -51,56 +51,58 @@
                     log: qq.bind(this.log, this)
                 });
 
-                // combine custom params and default params
-                qq.extend(uploadSuccessParams, self._getEndpointSpecificParams(id, result, xhr), true);
-
-                // include any params associated with the file
-                fileParams && qq.extend(uploadSuccessParams, fileParams, true);
-
                 return new Promise(function(resolve, reject) {
-                    submitSuccessRequest = qq.bind(function() {
-                        successAjaxRequester.sendSuccessRequest(id, uploadSuccessParams)
-                            .then(
-                                // If we are waiting for confirmation from the local server, and have received it,
-                                // include properties from the local server response in the `response` parameter
-                                // sent to the `onComplete` callback, delegate to the parent `_onComplete`, and
-                                // resolve the associated promise.
-                                function(successRequestResult) {
-                                    delete self._failedSuccessRequestCallbacks[id];
-                                    qq.extend(result, successRequestResult);
-                                    qq.FineUploaderBasic.prototype._onComplete.apply(self, onCompleteArgs);
-                                    resolve(successRequestResult);
-                                },
-                                // If the upload success request fails, attempt to re-send the success request (via the core retry code).
-                                // The entire upload may be restarted if the server returns a "reset" property with a value of true as well.
-                                function(successRequestResult) {
-                                    var callback = submitSuccessRequest,
-                                        error;
+                    self._getEndpointSpecificParams(id, result, xhr).then(function(endpointSpecificParams) {
+                        // combine custom params and default params
+                        qq.extend(uploadSuccessParams, endpointSpecificParams, true);
 
-                                    qq.extend(result, successRequestResult);
+                        // include any params associated with the file
+                        fileParams && qq.extend(uploadSuccessParams, fileParams, true);
 
-                                    if (result && result.reset) {
-                                        callback = null;
-                                    }
-
-                                    if (!callback) {
+                        submitSuccessRequest = qq.bind(function() {
+                            successAjaxRequester.sendSuccessRequest(id, uploadSuccessParams)
+                                .then(
+                                    // If we are waiting for confirmation from the local server, and have received it,
+                                    // include properties from the local server response in the `response` parameter
+                                    // sent to the `onComplete` callback, delegate to the parent `_onComplete`, and
+                                    // resolve the associated promise.
+                                    function(successRequestResult) {
                                         delete self._failedSuccessRequestCallbacks[id];
-                                    }
-                                    else {
-                                        self._failedSuccessRequestCallbacks[id] = callback;
-                                    }
-
-                                    if (!self._onAutoRetry(id, name, result, xhr, callback)) {
+                                        qq.extend(result, successRequestResult);
                                         qq.FineUploaderBasic.prototype._onComplete.apply(self, onCompleteArgs);
-                                        error = new Error("Success request failed");
-                                        error.response = successRequestResult;
-                                        reject(error);
-                                    }
-                                }
-                            );
-                    }, self);
+                                        resolve(successRequestResult);
+                                    },
+                                    // If the upload success request fails, attempt to re-send the success request (via the core retry code).
+                                    // The entire upload may be restarted if the server returns a "reset" property with a value of true as well.
+                                    function(successRequestResult) {
+                                        var callback = submitSuccessRequest,
+                                            error;
 
-                    submitSuccessRequest();
+                                        qq.extend(result, successRequestResult);
+
+                                        if (result && result.reset) {
+                                            callback = null;
+                                        }
+
+                                        if (!callback) {
+                                            delete self._failedSuccessRequestCallbacks[id];
+                                        }
+                                        else {
+                                            self._failedSuccessRequestCallbacks[id] = callback;
+                                        }
+
+                                        if (!self._onAutoRetry(id, name, result, xhr, callback)) {
+                                            qq.FineUploaderBasic.prototype._onComplete.apply(self, onCompleteArgs);
+                                            error = new Error("Success request failed");
+                                            error.response = successRequestResult;
+                                            reject(error);
+                                        }
+                                    }
+                                );
+                        }, self);
+
+                        submitSuccessRequest();
+                    });
                 });
             }
 

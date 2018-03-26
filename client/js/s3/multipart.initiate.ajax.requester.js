@@ -49,41 +49,43 @@ qq.s3.InitiateMultipartAjaxRequester = function(o) {
      * @returns {qq.Promise}
      */
     function getHeaders(id) {
-        var bucket = options.getBucket(id),
-            host = options.getHost(id),
-            headers = {},
-            promise = new qq.Promise(),
-            key = options.getKey(id),
-            signatureConstructor;
+        var promise = new qq.Promise();
 
-        headers["x-amz-acl"] = options.aclStore.get(id);
+        options.getKey(id).then(function(key) {
+            var bucket = options.getBucket(id),
+                host = options.getHost(id),
+                headers = {},
+                signatureConstructor;
 
-        if (options.reducedRedundancy) {
-            headers[qq.s3.util.REDUCED_REDUNDANCY_PARAM_NAME] = qq.s3.util.REDUCED_REDUNDANCY_PARAM_VALUE;
-        }
+            headers["x-amz-acl"] = options.aclStore.get(id);
 
-        if (options.serverSideEncryption) {
-            headers[qq.s3.util.SERVER_SIDE_ENCRYPTION_PARAM_NAME] = qq.s3.util.SERVER_SIDE_ENCRYPTION_PARAM_VALUE;
-        }
-
-        headers[qq.s3.util.AWS_PARAM_PREFIX + options.filenameParam] = encodeURIComponent(options.getName(id));
-
-        qq.each(options.paramsStore.get(id), function(name, val) {
-            if (qq.indexOf(qq.s3.util.UNPREFIXED_PARAM_NAMES, name) >= 0) {
-                headers[name] = val;
+            if (options.reducedRedundancy) {
+                headers[qq.s3.util.REDUCED_REDUNDANCY_PARAM_NAME] = qq.s3.util.REDUCED_REDUNDANCY_PARAM_VALUE;
             }
-            else {
-                headers[qq.s3.util.AWS_PARAM_PREFIX + name] = encodeURIComponent(val);
+
+            if (options.serverSideEncryption) {
+                headers[qq.s3.util.SERVER_SIDE_ENCRYPTION_PARAM_NAME] = qq.s3.util.SERVER_SIDE_ENCRYPTION_PARAM_VALUE;
             }
+
+            headers[qq.s3.util.AWS_PARAM_PREFIX + options.filenameParam] = encodeURIComponent(options.getName(id));
+
+            qq.each(options.paramsStore.get(id), function(name, val) {
+                if (qq.indexOf(qq.s3.util.UNPREFIXED_PARAM_NAMES, name) >= 0) {
+                    headers[name] = val;
+                }
+                else {
+                    headers[qq.s3.util.AWS_PARAM_PREFIX + name] = encodeURIComponent(val);
+                }
+            });
+
+            signatureConstructor = getSignatureAjaxRequester.constructStringToSign
+                (getSignatureAjaxRequester.REQUEST_TYPE.MULTIPART_INITIATE, bucket, host, key)
+                .withContentType(options.getContentType(id))
+                .withHeaders(headers);
+
+            // Ask the local server to sign the request.  Use this signature to form the Authorization header.
+            getSignatureAjaxRequester.getSignature(id, {signatureConstructor: signatureConstructor}).then(promise.success, promise.failure);
         });
-
-        signatureConstructor = getSignatureAjaxRequester.constructStringToSign
-            (getSignatureAjaxRequester.REQUEST_TYPE.MULTIPART_INITIATE, bucket, host, key)
-            .withContentType(options.getContentType(id))
-            .withHeaders(headers);
-
-        // Ask the local server to sign the request.  Use this signature to form the Authorization header.
-        getSignatureAjaxRequester.getSignature(id, {signatureConstructor: signatureConstructor}).then(promise.success, promise.failure);
 
         return promise;
     }

@@ -42,29 +42,31 @@ qq.s3.AbortMultipartAjaxRequester = function(o) {
      * @returns {Promise}
      */
     function getHeaders(id, uploadId) {
-        var headers = {},
-            bucket = options.getBucket(id),
-            host = options.getHost(id),
-            signatureConstructor = getSignatureAjaxRequester.constructStringToSign
-                (getSignatureAjaxRequester.REQUEST_TYPE.MULTIPART_ABORT, bucket, host, options.getKey(id))
-                .withUploadId(uploadId);
-
         return new Promise(function(resolve, reject) {
-            // Ask the local server to sign the request.  Use this signature to form the Authorization header.
-            getSignatureAjaxRequester.getSignature(id, {signatureConstructor: signatureConstructor}).then(
-                function (signedPolicy, updatedAccessKey, updatedSessionToken) {
-                    resolve({
-                        signedPolicy: signedPolicy,
-                        updatedAccessKey: updatedAccessKey,
-                        updatedSessionToken: updatedSessionToken
-                    });
-                },
-                function (reason) {
-                    var error = new Error("Faild to get signature");
-                    error.error = reason;
-                    reject(error);
-                }
-            );
+            options.getKey(id).then(function(key) {
+                var headers = {},
+                    bucket = options.getBucket(id),
+                    host = options.getHost(id),
+                    signatureConstructor = getSignatureAjaxRequester.constructStringToSign
+                        (getSignatureAjaxRequester.REQUEST_TYPE.MULTIPART_ABORT, bucket, host, key)
+                        .withUploadId(uploadId);
+
+                // Ask the local server to sign the request.  Use this signature to form the Authorization header.
+                getSignatureAjaxRequester.getSignature(id, {signatureConstructor: signatureConstructor}).then(
+                    function (signedPolicy, updatedAccessKey, updatedSessionToken) {
+                        resolve({
+                            signedPolicy: signedPolicy,
+                            updatedAccessKey: updatedAccessKey,
+                            updatedSessionToken: updatedSessionToken
+                        });
+                    },
+                    function (reason) {
+                        var error = new Error("Faild to get signature");
+                        error.error = reason;
+                        reject(error);
+                    }
+                );
+            });
         });
     }
 

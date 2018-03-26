@@ -405,21 +405,25 @@
         },
 
         _getEndpointSpecificParams: function(id, response, maybeXhr) {
-            var params = {
-                key: this.getKey(id),
-                uuid: this.getUuid(id),
-                name: this.getName(id),
-                bucket: this.getBucket(id)
-            };
+            var self = this;
 
-            if (maybeXhr && maybeXhr.getResponseHeader("ETag")) {
-                params.etag = maybeXhr.getResponseHeader("ETag");
-            }
-            else if (response.etag) {
-                params.etag = response.etag;
-            }
+            return this.getKey(id).then(function(key) {
+                var params = {
+                    key: key,
+                    uuid: self.getUuid(id),
+                    name: self.getName(id),
+                    bucket: self.getBucket(id)
+                };
 
-            return params;
+                if (maybeXhr && maybeXhr.getResponseHeader("ETag")) {
+                    params.etag = maybeXhr.getResponseHeader("ETag");
+                }
+                else if (response.etag) {
+                    params.etag = response.etag;
+                }
+
+                return params;
+            });
         },
 
         // Hooks into the base internal `_onSubmitDelete` to add key and bucket params to the delete file request.
