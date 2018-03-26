@@ -322,8 +322,7 @@ qq.s3.RequestSigner = function(o) {
     }
 
     function getStringToSignArtifacts(id, version, requestInfo) {
-        var promise = new qq.Promise(),
-            method = "POST",
+        var method = "POST",
             headerNames = [],
             headersStr = "",
             now = new Date(),
@@ -398,23 +397,21 @@ qq.s3.RequestSigner = function(o) {
 
         endOfUrl = requestInfo.key + "?" + endOfUrl;
 
-        if (version === 4) {
-            v4.getEncodedHashedPayload(requestInfo.content).then(function(hashedContent) {
-                requestInfo.headers["x-amz-content-sha256"] = hashedContent;
-                requestInfo.headers.Host = requestInfo.host;
-                requestInfo.headers["x-amz-date"] = qq.s3.util.getV4PolicyDate(now, options.signatureSpec.drift);
-                requestInfo.hashedContent = hashedContent;
+        return new Promise(function(resolve, reject) {
+            if (version === 4) {
+                v4.getEncodedHashedPayload(requestInfo.content).then(function(hashedContent) {
+                    requestInfo.headers["x-amz-content-sha256"] = hashedContent;
+                    requestInfo.headers.Host = requestInfo.host;
+                    requestInfo.headers["x-amz-date"] = qq.s3.util.getV4PolicyDate(now, options.signatureSpec.drift);
+                    requestInfo.hashedContent = hashedContent;
 
-                promise.success(generateStringToSign(requestInfo));
-            }, function (err) {
-                promise.failure(err);
-            });
-        }
-        else {
-            promise.success(generateStringToSign(requestInfo));
-        }
-
-        return promise;
+                    resolve(generateStringToSign(requestInfo));
+                }, reject);
+            }
+            else {
+                resolve(generateStringToSign(requestInfo));
+            }
+        });
     }
 
     function determineSignatureClientSide(id, toBeSigned, signatureEffort, updatedAccessKey, updatedSessionToken) {
