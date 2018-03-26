@@ -24,12 +24,14 @@ if (qqtest.canDownloadFileAsBlob) {
                     fileTestHelper.mockXhr();
                     uploader.addFiles({name: "test.jpg", blob: blob});
 
-                    assert.equal(fileTestHelper.getRequests().length, 1, "Wrong # of requests");
+                    setTimeout(function() {
+                        assert.equal(fileTestHelper.getRequests().length, 1, "Wrong # of requests");
 
-                    initiateSignatureRequest = fileTestHelper.getRequests()[0];
-                    initiateToSign = JSON.parse(initiateSignatureRequest.requestBody);
+                        initiateSignatureRequest = fileTestHelper.getRequests()[0];
+                        initiateToSign = JSON.parse(initiateSignatureRequest.requestBody);
 
-                    callback(initiateSignatureRequest, initiateToSign, uploadRequest);
+                        callback(initiateSignatureRequest, initiateToSign, uploadRequest);
+                    }, 0);
                 });
             },
             testSignatureEndoint = "/signature",
@@ -810,11 +812,13 @@ if (qqtest.canDownloadFileAsBlob) {
                         fileTestHelper.mockXhr();
                         uploader.addFiles({name: "test.jpg", blob: blob});
 
-                        assert.equal(fileTestHelper.getRequests().length, 1, "Wrong # of requests");
+                        setTimeout(function() {
+                            assert.equal(fileTestHelper.getRequests().length, 1, "Wrong # of requests");
 
-                        uploadRequest = fileTestHelper.getRequests()[0];
+                            uploadRequest = fileTestHelper.getRequests()[0];
 
-                        callback(uploadRequest);
+                            callback(uploadRequest);
+                        }, 0);
                     });
                 },
                 testSecretKey = "testSecrtKey",

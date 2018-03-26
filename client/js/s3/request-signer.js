@@ -152,31 +152,30 @@ qq.s3.RequestSigner = function(o) {
             },
 
             getEncodedHashedPayload: function(body) {
-                var promise = new qq.Promise(),
-                    reader;
+                return new Promise(function(resolve, reject) {
+                    var reader;
 
-                if (qq.isBlob(body)) {
-                    // TODO hash blob in webworker if this becomes a notable perf issue
-                    reader = new FileReader();
-                    reader.onloadend = function(e) {
-                        if (e.target.readyState === FileReader.DONE) {
-                            if (e.target.error) {
-                                promise.failure(e.target.error);
+                    if (qq.isBlob(body)) {
+                        // TODO hash blob in webworker if this becomes a notable perf issue
+                        reader = new FileReader();
+                        reader.onloadend = function(e) {
+                            if (e.target.readyState === FileReader.DONE) {
+                                if (e.target.error) {
+                                    reject(e.target.error);
+                                }
+                                else {
+                                    var wordArray = qq.CryptoJS.lib.WordArray.create(e.target.result);
+                                    resolve(qq.CryptoJS.SHA256(wordArray).toString());
+                                }
                             }
-                            else {
-                                var wordArray = qq.CryptoJS.lib.WordArray.create(e.target.result);
-                                promise.success(qq.CryptoJS.SHA256(wordArray).toString());
-                            }
-                        }
-                    };
-                    reader.readAsArrayBuffer(body);
-                }
-                else {
-                    body = body || "";
-                    promise.success(qq.CryptoJS.SHA256(body).toString());
-                }
-
-                return promise;
+                        };
+                        reader.readAsArrayBuffer(body);
+                    }
+                    else {
+                        body = body || "";
+                        resolve(qq.CryptoJS.SHA256(body).toString());
+                    }
+                });
             },
 
             getScope: function(date, region) {
