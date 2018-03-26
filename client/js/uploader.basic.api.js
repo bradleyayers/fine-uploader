@@ -198,8 +198,8 @@
                             promiseToReturn.success(modifiedContainer);
                         },
 
-                        function failure(container, reason) {
-                            promiseToReturn.failure({container: container, error: reason || "Problem generating thumbnail"});
+                        function failure(error) {
+                            promiseToReturn.failure({container: error.container, error: error.message || "Problem generating thumbnail"});
                         }
                     );
                 }

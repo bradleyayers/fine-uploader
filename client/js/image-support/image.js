@@ -133,7 +133,7 @@ qq.ImageGenerator = function(log) {
         }
         else {
             error = new Error(qq.format("Element container of type {} is not supported!", imgOrCanvas.tagName));
-            error.imgOrCanvas = imgOrCanvas;
+            error.container = imgOrCanvas;
             promise = Promise.reject(error);
             log(error.message, "error");
         }
@@ -312,15 +312,13 @@ qq.ImageGenerator = function(log) {
          * @param fileBlobOrUrl a `File`, `Blob`, or a URL pointing to the image
          * @param container <img> or <canvas> to contain the preview
          * @param options possible properties include `maxSize` (int), `orient` (bool - default true), resize` (bool - default true), and `customResizeFunction`.
-         * @returns qq.Promise fulfilled when the preview has been drawn, or the attempt has failed
+         * @returns {Promise} resolved when the preview has been drawn, or the attempt has failed
          */
         generate: function(fileBlobOrUrl, container, options) {
-            var promise = new qq.Promise();
 
             if (qq.isString(fileBlobOrUrl)) {
                 log("Attempting to update thumbnail based on server response.");
-                drawFromUrl(fileBlobOrUrl, container, options || {}).then(promise.success, promise.failure);
-                return promise;
+                return drawFromUrl(fileBlobOrUrl, container, options || {});
             }
             else {
                 log("Attempting to draw client-side image preview.");
