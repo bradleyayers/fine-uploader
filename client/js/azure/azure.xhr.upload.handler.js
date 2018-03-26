@@ -80,19 +80,14 @@ qq.azure.XhrUploadHandler = function(spec, proxy) {
     }
 
     function determineBlobUrl(id) {
-        var containerUrl = endpointStore.get(id),
-            promise = new qq.Promise(),
-            getBlobNameSuccess = function(blobName) {
+        var containerUrl = endpointStore.get(id);
+
+        return new Promise(function(resolve, reject) {
+            onGetBlobName(id).then(function(blobName) {
                 handler._setThirdPartyFileId(id, blobName);
-                promise.success(containerUrl + "/" + blobName);
-            },
-            getBlobNameFailure = function(error) {
-                promise.failure(error.message);
-            };
-
-        onGetBlobName(id).then(getBlobNameSuccess, getBlobNameFailure);
-
-        return promise;
+                resolve(containerUrl + "/" + blobName);
+            }, reject);
+        });
     }
 
     function getSignedUrl(id, optChunkIdx) {
@@ -114,9 +109,8 @@ qq.azure.XhrUploadHandler = function(spec, proxy) {
                         getSasFailure
                     );
                 },
-                determineBlobUrlFailure = function(reason) {
-                    var error = new Error(reason);
-                    log(qq.format("Failed to determine blob name for ID {} - {}", id, reason), "error");
+                determineBlobUrlFailure = function(error) {
+                    log(qq.format("Failed to determine blob name for ID {} - {}", id, error.message), "error");
                     reject(error);
                 };
 
