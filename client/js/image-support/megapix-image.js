@@ -110,7 +110,6 @@
             width = options.width,
             height = options.height,
             ctx = canvas.getContext("2d"),
-            promise = new qq.Promise(),
             modifiedDimensions;
 
         ctx.save();
@@ -190,9 +189,8 @@
         }
 
         canvas.qqImageRendered && canvas.qqImageRendered();
-        promise.success();
 
-        return promise;
+        return Promise.resolve();
     }
 
     function renderImageToCanvasWithCustomResizer(resizeInfo) {
