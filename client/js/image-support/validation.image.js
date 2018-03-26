@@ -27,41 +27,38 @@ qq.ImageValidation = function(blob, log) {
     }
 
     /**
-     * @returns {qq.Promise} The promise is a failure if we can't obtain the width & height.
-     * Otherwise, `success` is called on the returned promise with an object containing
-     * `width` and `height` properties.
+     * @returns {Promise} The promise is rejected if we can't obtain the width & height.
+     * Otherwise it is resolved with an object `{width: number, height: number}`.
      */
     function getWidthHeight() {
-        var sizeDetermination = new qq.Promise();
+        return new Promise(function(resolve, reject) {
+            new qq.Identify(blob, log).isPreviewable().then(function() {
+                var image = new Image(),
+                    url = window.URL && window.URL.createObjectURL ? window.URL :
+                        window.webkitURL && window.webkitURL.createObjectURL ? window.webkitURL :
+                        null;
 
-        new qq.Identify(blob, log).isPreviewable().then(function() {
-            var image = new Image(),
-                url = window.URL && window.URL.createObjectURL ? window.URL :
-                      window.webkitURL && window.webkitURL.createObjectURL ? window.webkitURL :
-                      null;
+                if (url) {
+                    image.onerror = function() {
+                        log("Cannot determine dimensions for image.  May be too large.", "error");
+                        reject();
+                    };
 
-            if (url) {
-                image.onerror = function() {
-                    log("Cannot determine dimensions for image.  May be too large.", "error");
-                    sizeDetermination.failure();
-                };
+                    image.onload = function() {
+                        resolve({
+                            width: this.width,
+                            height: this.height
+                        });
+                    };
 
-                image.onload = function() {
-                    sizeDetermination.success({
-                        width: this.width,
-                        height: this.height
-                    });
-                };
-
-                image.src = url.createObjectURL(blob);
-            }
-            else {
-                log("No createObjectURL function available to generate image URL!", "error");
-                sizeDetermination.failure();
-            }
-        }, sizeDetermination.failure);
-
-        return sizeDetermination;
+                    image.src = url.createObjectURL(blob);
+                }
+                else {
+                    log("No createObjectURL function available to generate image URL!", "error");
+                    reject();
+                }
+            }, reject);
+        });
     }
 
     /**
@@ -123,7 +120,9 @@ qq.ImageValidation = function(blob, log) {
                 else {
                     validationEffort.success();
                 }
-            }, validationEffort.success);
+            }, function() {
+                validationEffort.success();
+            });
         }
         else {
             validationEffort.success();
