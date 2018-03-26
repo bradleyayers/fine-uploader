@@ -88,28 +88,26 @@ qq.DragAndDrop = function(o) {
     }
 
     // Promissory.  Guaranteed to read all files in the root of the passed directory.
-    function getFilesInDirectory(entry, reader, accumEntries, existingPromise) {
-        var promise = existingPromise || new qq.Promise(),
+    function getFilesInDirectory(entry, reader, accumEntries) {
+        var promise = existingPromise,
             dirReader = reader || entry.createReader();
 
-        dirReader.readEntries(
-            function readSuccess(entries) {
-                var newEntries = accumEntries ? accumEntries.concat(entries) : entries;
+        return new Promise(function(resolve, reject) {
+            dirReader.readEntries(
+                function readSuccess(entries) {
+                    var newEntries = accumEntries ? accumEntries.concat(entries) : entries;
 
-                if (entries.length) {
-                    setTimeout(function() { // prevent stack overflow, however unlikely
-                        getFilesInDirectory(entry, dirReader, newEntries, promise);
-                    }, 0);
-                }
-                else {
-                    promise.success(newEntries);
-                }
-            },
+                    if (entries.length) {
+                        getFilesInDirectory(entry, dirReader, newEntries).then(resolve, reject);
+                    }
+                    else {
+                        resolve(newEntries);
+                    }
+                },
 
-            promise.failure
-        );
-
-        return promise;
+                reject
+            );
+        });
     }
 
     function handleDataTransfer(dataTransfer, uploadDropZone) {
