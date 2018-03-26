@@ -157,13 +157,7 @@ qq.s3.XhrUploadHandler = function(spec, proxy) {
                         function() {
                             chunked.put(id, chunkIdx).then(resolve, reject);
                         },
-
-                        // We were unable to initiate the chunked upload process.
-                        function(errorMessage, xhr) {
-                            var error = new Error(errorMessage);
-                            error.xhr = xhr;
-                            reject(error);
-                        }
+                        reject
                     );
                 });
             },
@@ -173,38 +167,39 @@ qq.s3.XhrUploadHandler = function(spec, proxy) {
              * initiated.
              *
              * @param id Associated file ID
-             * @returns {qq.Promise} A promise that is fulfilled when the initiate request has been sent and the response has been parsed.
+             * @returns {Promise} A promise that is resolved when the initiate request has been sent and the response has been parsed.
              */
             setup: function(id) {
-                var promise = new qq.Promise(),
-                    uploadId = handler._getPersistableData(id).uploadId,
-                    uploadIdPromise = new qq.Promise();
+                return new Promise(function(setupResolve, setupReject) {
+                    var uploadId = handler._getPersistableData(id).uploadId;
 
-                if (!uploadId) {
-                    handler._getPersistableData(id).uploadId = uploadIdPromise;
-                    requesters.initiateMultipart.send(id).then(
-                        function(uploadId) {
-                            handler._getPersistableData(id).uploadId = uploadId;
-                            uploadIdPromise.success(uploadId);
-                            promise.success(uploadId);
-                        },
-                        function(errorMsg, xhr) {
-                            handler._getPersistableData(id).uploadId = null;
-                            promise.failure(errorMsg, xhr);
-                            uploadIdPromise.failure(errorMsg, xhr);
-                        }
-                    );
-                }
-                else if (uploadId instanceof qq.Promise) {
-                    uploadId.then(function(uploadId) {
-                        promise.success(uploadId);
-                    });
-                }
-                else {
-                    promise.success(uploadId);
-                }
-
-                return promise;
+                    if (!uploadId) {
+                        handler._getPersistableData(id).uploadId = new Promise(function(resolve, reject) {
+                            requesters.initiateMultipart.send(id).then(
+                                function(uploadId) {
+                                    handler._getPersistableData(id).uploadId = uploadId;
+                                    resolve(uploadId);
+                                    setupResolve(uploadId);
+                                },
+                                function(errorMsg, xhr) {
+                                    var error = new Error(errorMsg);
+                                    error.xhr = xhr;
+                                    handler._getPersistableData(id).uploadId = null;
+                                    setupReject(error);
+                                    reject(error);
+                                }
+                            );
+                        });
+                    }
+                    else if (uploadId instanceof Promise) {
+                        uploadId.then(function(uploadId) {
+                            setupResolve(uploadId);
+                        });
+                    }
+                    else {
+                        setupResolve(uploadId);
+                    }
+                });
             }
         },
 
@@ -570,7 +565,7 @@ qq.s3.XhrUploadHandler = function(spec, proxy) {
                     },
                     function(errorReason) {
                         var error = new Error(errorReason);
-                        error.error = errorReason
+                        error.error = errorReason;
                         reject(error);
                     });
                 });
