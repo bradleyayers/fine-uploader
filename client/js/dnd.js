@@ -113,52 +113,51 @@ qq.DragAndDrop = function(o) {
     }
 
     function handleDataTransfer(dataTransfer, uploadDropZone) {
-        var pendingFolderPromises = [],
-            handleDataTransferPromise = new qq.Promise();
+        var pendingFolderPromises = [];
 
         options.callbacks.processingDroppedFiles();
         uploadDropZone.dropDisabled(true);
 
-        if (dataTransfer.files.length > 1 && !options.allowMultipleItems) {
-            options.callbacks.processingDroppedFilesComplete([]);
-            options.callbacks.dropError("tooManyFilesError", "");
-            uploadDropZone.dropDisabled(false);
-            handleDataTransferPromise.failure();
-        }
-        else {
-            droppedFiles = [];
-
-            if (qq.isFolderDropSupported(dataTransfer)) {
-                qq.each(dataTransfer.items, function(idx, item) {
-                    var entry = item.webkitGetAsEntry();
-
-                    if (entry) {
-                        //due to a bug in Chrome's File System API impl - #149735
-                        if (entry.isFile) {
-                            droppedFiles.push(item.getAsFile());
-                        }
-
-                        else {
-                            pendingFolderPromises.push(traverseFileTree(entry).done(function() {
-                                pendingFolderPromises.pop();
-                                if (pendingFolderPromises.length === 0) {
-                                    handleDataTransferPromise.success();
-                                }
-                            }));
-                        }
-                    }
-                });
+        return new Promise(function(resolve, reject) {
+            if (dataTransfer.files.length > 1 && !options.allowMultipleItems) {
+                options.callbacks.processingDroppedFilesComplete([]);
+                options.callbacks.dropError("tooManyFilesError", "");
+                uploadDropZone.dropDisabled(false);
+                reject();
             }
             else {
-                droppedFiles = dataTransfer.files;
-            }
+                droppedFiles = [];
 
-            if (pendingFolderPromises.length === 0) {
-                handleDataTransferPromise.success();
-            }
-        }
+                if (qq.isFolderDropSupported(dataTransfer)) {
+                    qq.each(dataTransfer.items, function(idx, item) {
+                        var entry = item.webkitGetAsEntry();
 
-        return handleDataTransferPromise;
+                        if (entry) {
+                            //due to a bug in Chrome's File System API impl - #149735
+                            if (entry.isFile) {
+                                droppedFiles.push(item.getAsFile());
+                            }
+
+                            else {
+                                pendingFolderPromises.push(traverseFileTree(entry).done(function() {
+                                    pendingFolderPromises.pop();
+                                    if (pendingFolderPromises.length === 0) {
+                                        resolve();
+                                    }
+                                }));
+                            }
+                        }
+                    });
+                }
+                else {
+                    droppedFiles = dataTransfer.files;
+                }
+
+                if (pendingFolderPromises.length === 0) {
+                    resolve();
+                }
+            }
+        });
     }
 
     function setupDropzone(dropArea) {
