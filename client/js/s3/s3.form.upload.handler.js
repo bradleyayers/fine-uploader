@@ -110,27 +110,22 @@ qq.s3.FormUploadHandler = function(options, proxy) {
      * Creates form, that will be submitted to iframe
      */
     function createForm(id, iframe) {
-        var promise = new qq.Promise(),
-            method = "POST",
+        var method = "POST",
             endpoint = options.endpointStore.get(id),
             fileName = getName(id);
 
-        generateAwsParams(id).then(function(params) {
-            var form = handler._initFormForUpload({
+        return generateAwsParams(id).then(function(params) {
+            return handler._initFormForUpload({
                 method: method,
                 endpoint: endpoint,
                 params: params,
                 paramsInBody: true,
                 targetName: iframe.name
             });
-
-            promise.success(form);
         }, function(error) {
-            promise.failure(error.message);
-            handleFinishedUpload(id, iframe, fileName, {error: error.message});
+            handleFinishedUpload(id, iframe);
+            throw error;
         });
-
-        return promise;
     }
 
     function handleUpload(id) {
@@ -175,7 +170,9 @@ qq.s3.FormUploadHandler = function(options, proxy) {
             log("Sending upload request for " + id);
             form.submit();
             qq(form).remove();
-        }, promise.failure);
+        }, function (error) {
+            promise.failure(error.message);
+        });
 
         return promise;
     }
