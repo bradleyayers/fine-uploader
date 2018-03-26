@@ -74,30 +74,33 @@ qq.s3.XhrUploadHandler = function(spec, proxy) {
             /**
              * Determines headers that must be attached to the chunked (Multipart Upload) request.  One of these headers is an
              * Authorization value, which must be determined by asking the local server to sign the request first.  So, this
-             * function returns a promise.  Once all headers are determined, the `success` method of the promise is called with
-             * the headers object.  If there was some problem determining the headers, we delegate to the caller's `failure`
-             * callback.
+             * function returns a promise.  Once all headers are determined, the promise is resolved with
+             * the headers object.  If there was some problem determining the headers, we reject the promise.
              *
              * @param id File ID
              * @param chunkIdx Index of the chunk to PUT
-             * @returns {qq.Promise}
+             * @returns {Promise}
              */
             initHeaders: function(id, chunkIdx, blob) {
                 var headers = {},
                     bucket = upload.bucket.getName(id),
                     host = upload.host.getName(id),
                     key = upload.key.urlSafe(id),
-                    promise = new qq.Promise(),
                     signatureConstructor = requesters.restSignature.constructStringToSign
                         (requesters.restSignature.REQUEST_TYPE.MULTIPART_UPLOAD, bucket, host, key)
                         .withPartNum(chunkIdx + 1)
                         .withContent(blob)
                         .withUploadId(handler._getPersistableData(id).uploadId);
 
-                // Ask the local server to sign the request.  Use this signature to form the Authorization header.
-                requesters.restSignature.getSignature(id + "." + chunkIdx, {signatureConstructor: signatureConstructor}).then(promise.success, promise.failure);
-
-                return promise;
+                return new Promise(function(resolve, reject) {
+                    // Ask the local server to sign the request.  Use this signature to form the Authorization header.
+                    requesters.restSignature.getSignature(id + "." + chunkIdx, {signatureConstructor: signatureConstructor}).then(
+                        function (headers, endOfUrl) {
+                            resolve({headers: headers, endOfUrl: endOfUrl});
+                        }, function() {
+                            reject();
+                        });
+                });
             },
 
             put: function(id, chunkIdx) {
@@ -108,7 +111,9 @@ qq.s3.XhrUploadHandler = function(spec, proxy) {
 
                 // Add appropriate headers to the multipart upload request.
                 // Once these have been determined (asynchronously) attach the headers and send the chunk.
-                chunked.initHeaders(id, chunkIdx, chunkData.blob).then(function(headers, endOfUrl) {
+                chunked.initHeaders(id, chunkIdx, chunkData.blob).then(function(info) {
+                    var headers = info.headers,
+                        endOfUrl = info.endOfUrl;
                     if (xhr._cancelled) {
                         log(qq.format("Upload of item {}.{} cancelled. Upload will not start after successful signature request.", id, chunkIdx));
                         promise.failure({error: "Chunk upload cancelled"});

@@ -54,36 +54,40 @@ if (qqtest.canDownloadFileAsBlob) {
                                 assert.ok(uploadPartToSign1.headers.indexOf("/mybucket/" + uploader.getKey(0) + "?partNumber=1&uploadId=123") > 0);
                                 uploadPartSignatureRequest1.respond(200, null, JSON.stringify({signature: "thesignature"}));
 
-                                // upload part 1 request
-                                uploadPartRequest = fileTestHelper.getRequests()[2];
-                                uploadPartRequest.respond(200, {ETag: "etag1"}, null);
-
                                 setTimeout(function() {
-                                    // signature request for upload part 2
-                                    uploadPartSignatureRequest2 = fileTestHelper.getRequests()[5];
-                                    uploadPartToSign2 = JSON.parse(uploadPartSignatureRequest2.requestBody);
-                                    assert.ok(uploadPartToSign2.headers.indexOf("/mybucket/" + uploader.getKey(0) + "?partNumber=2&uploadId=123") > 0);
-                                    uploadPartSignatureRequest2.respond(200, null, JSON.stringify({signature: "thesignature"}));
-
-                                    // upload part 2 request
-                                    uploadPartRequest = fileTestHelper.getRequests()[4];
-                                    uploadPartRequest.respond(200, {ETag: "etag2"}, null);
+                                    // upload part 1 request
+                                    uploadPartRequest = fileTestHelper.getRequests()[2];
+                                    uploadPartRequest.respond(200, {ETag: "etag1"}, null);
 
                                     setTimeout(function() {
-                                        // signature request for multipart complete
-                                        uploadCompleteSignatureRequest = fileTestHelper.getRequests()[6];
-                                        uploadCompleteToSign = JSON.parse(uploadCompleteSignatureRequest.requestBody);
-                                        assert.ok(uploadCompleteToSign.headers.indexOf("/mybucket/" + uploader.getKey(0) + "?uploadId=123") > 0);
-                                        uploadCompleteSignatureRequest.respond(200, null, JSON.stringify({signature: "thesignature"}));
-
-                                        // multipart complete request
-                                        multipartCompleteRequest = fileTestHelper.getRequests()[7];
-                                        multipartCompleteRequest.respond(200, null, "<CompleteMultipartUploadResult><Bucket>mybucket</Bucket><Key>" + uploader.getKey(0) + "</Key></CompleteMultipartUploadResult>");
+                                        // signature request for upload part 2
+                                        uploadPartSignatureRequest2 = fileTestHelper.getRequests()[5];
+                                        uploadPartToSign2 = JSON.parse(uploadPartSignatureRequest2.requestBody);
+                                        assert.ok(uploadPartToSign2.headers.indexOf("/mybucket/" + uploader.getKey(0) + "?partNumber=2&uploadId=123") > 0);
+                                        uploadPartSignatureRequest2.respond(200, null, JSON.stringify({signature: "thesignature"}));
 
                                         setTimeout(function() {
-                                            assert.equal(uploader.getUploads()[0].status, qq.status.UPLOAD_SUCCESSFUL);
+                                            // upload part 2 request
+                                            uploadPartRequest = fileTestHelper.getRequests()[4];
+                                            uploadPartRequest.respond(200, {ETag: "etag2"}, null);
 
-                                            done();
+                                            setTimeout(function() {
+                                                // signature request for multipart complete
+                                                uploadCompleteSignatureRequest = fileTestHelper.getRequests()[6];
+                                                uploadCompleteToSign = JSON.parse(uploadCompleteSignatureRequest.requestBody);
+                                                assert.ok(uploadCompleteToSign.headers.indexOf("/mybucket/" + uploader.getKey(0) + "?uploadId=123") > 0);
+                                                uploadCompleteSignatureRequest.respond(200, null, JSON.stringify({signature: "thesignature"}));
+
+                                                // multipart complete request
+                                                multipartCompleteRequest = fileTestHelper.getRequests()[7];
+                                                multipartCompleteRequest.respond(200, null, "<CompleteMultipartUploadResult><Bucket>mybucket</Bucket><Key>" + uploader.getKey(0) + "</Key></CompleteMultipartUploadResult>");
+
+                                                setTimeout(function() {
+                                                    assert.equal(uploader.getUploads()[0].status, qq.status.UPLOAD_SUCCESSFUL);
+
+                                                    done();
+                                                }, 0);
+                                            }, 0);
                                         }, 0);
                                     }, 0);
                                 }, 0);
