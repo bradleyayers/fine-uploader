@@ -211,35 +211,38 @@ qq.ImageGenerator = function(log) {
         });
     }
 
-    function drawOnCanvasOrImgFromUrl(url, canvasOrImg, draw, maxSize, customResizeFunction) {
-        var tempImg = new Image(),
-            tempImgRender = registerThumbnailRenderedListener(tempImg).promise;
+    function drawOnCanvasOrImgFromUrl(url, canvasOrImg, maxSize, customResizeFunction) {
+        return new Promise(function(resolve, reject) {
+            var tempImg = new Image(),
+                tempImgRender = registerThumbnailRenderedListener(tempImg).promise;
 
-        if (isCrossOrigin(url)) {
-            tempImg.crossOrigin = "anonymous";
-        }
+            if (isCrossOrigin(url)) {
+                tempImg.crossOrigin = "anonymous";
+            }
 
-        tempImg.src = url;
+            tempImg.src = url;
 
-        tempImgRender.then(
-            function rendered() {
-                registerThumbnailRenderedListener(canvasOrImg).promise.then(draw.success, draw.failure);
+            tempImgRender.then(
+                function rendered() {
+                    registerThumbnailRenderedListener(canvasOrImg).promise.then(resolve, reject);
 
-                var mpImg = new qq.MegaPixImage(tempImg);
-                mpImg.render(canvasOrImg, {
-                    maxWidth: maxSize,
-                    maxHeight: maxSize,
-                    mime: determineMimeOfFileName(url),
-                    resize: customResizeFunction
-                });
-            },
+                    var mpImg = new qq.MegaPixImage(tempImg);
+                    mpImg.render(canvasOrImg, {
+                        maxWidth: maxSize,
+                        maxHeight: maxSize,
+                        mime: determineMimeOfFileName(url),
+                        resize: customResizeFunction
+                    });
+                },
 
-            draw.failure
-        );
+                reject
+            );
+        });
     }
 
-    function drawOnImgFromUrlWithCssScaling(url, img, draw, maxSize) {
-        registerThumbnailRenderedListener(img).promise.then(draw.success, draw.failure);
+    function drawOnImgFromUrlWithCssScaling(url, img, maxSize) {
+        var promise = registerThumbnailRenderedListener(img).promise;
+
         // NOTE: The fact that maxWidth/height is set on the thumbnail for scaled images
         // that must drop back to CSS is known and exploited by the templating module.
         // In this module, we pre-render "waiting" thumbs for all files immediately after they
@@ -250,6 +253,7 @@ qq.ImageGenerator = function(log) {
         });
 
         img.src = url;
+        return promise;
     }
 
     // Draw a (server-hosted) thumbnail given a URL.
@@ -261,8 +265,7 @@ qq.ImageGenerator = function(log) {
     // which is required to scale a cross-origin image using <canvas> &
     // then export it back to an <img>.
     function drawFromUrl(url, container, options) {
-        var draw = new qq.Promise(),
-            scale = options.scale,
+        var scale = options.scale,
             maxSize = scale ? options.maxSize : null;
 
         // container is an img, scaling needed
@@ -274,30 +277,30 @@ qq.ImageGenerator = function(log) {
                 // but we must fall back to scaling via CSS/styles
                 // if this is a cross-origin image and the UA doesn't support <img> CORS.
                 if (isCrossOrigin(url) && !isImgCorsSupported()) {
-                    drawOnImgFromUrlWithCssScaling(url, container, draw, maxSize);
+                    return drawOnImgFromUrlWithCssScaling(url, container, maxSize);
                 }
                 else {
-                    drawOnCanvasOrImgFromUrl(url, container, draw, maxSize);
+                    return drawOnCanvasOrImgFromUrl(url, container, maxSize);
                 }
             }
             else {
-                drawOnImgFromUrlWithCssScaling(url, container, draw, maxSize);
+                return drawOnImgFromUrlWithCssScaling(url, container, maxSize);
             }
         }
         // container is a canvas, scaling optional
         else if (isCanvas(container)) {
-            drawOnCanvasOrImgFromUrl(url, container, draw, maxSize);
+            return drawOnCanvasOrImgFromUrl(url, container, maxSize);
         }
         // container is an img & no scaling: just set the src attr to the passed url
         else {
-            var thumbnailRenderedListenerResult = registerThumbnailRenderedListener(container);
-            thumbnailRenderedListenerResult.promise.then(draw.success, draw.failure);
-            if (thumbnailRenderedListenerResult.registered) {
-                container.src = url;
-            }
+            return new Promise(function(resolve, reject) {
+                var thumbnailRenderedListenerResult = registerThumbnailRenderedListener(container);
+                thumbnailRenderedListenerResult.promise.then(resolve, reject);
+                if (thumbnailRenderedListenerResult.registered) {
+                    container.src = url;
+                }
+            });
         }
-
-        return draw;
     }
 
     qq.extend(this, {
@@ -312,9 +315,12 @@ qq.ImageGenerator = function(log) {
          * @returns qq.Promise fulfilled when the preview has been drawn, or the attempt has failed
          */
         generate: function(fileBlobOrUrl, container, options) {
+            var promise = new qq.Promise();
+
             if (qq.isString(fileBlobOrUrl)) {
                 log("Attempting to update thumbnail based on server response.");
-                return drawFromUrl(fileBlobOrUrl, container, options || {});
+                drawFromUrl(fileBlobOrUrl, container, options || {}).then(promise.success, promise.failure);
+                return promise;
             }
             else {
                 log("Attempting to draw client-side image preview.");
