@@ -60,7 +60,9 @@ qq.s3.AbortMultipartAjaxRequester = function(o) {
                     });
                 },
                 function (reason) {
-                    reject(new Error(reason));
+                    var error = new Error("Faild to get signature");
+                    error.error = reason;
+                    reject(error);
                 }
             );
         });

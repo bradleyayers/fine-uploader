@@ -106,63 +106,66 @@ qq.s3.XhrUploadHandler = function(spec, proxy) {
             put: function(id, chunkIdx) {
                 var xhr = handler._createXhr(id, chunkIdx),
                     chunkData = handler._getChunkData(id, chunkIdx),
-                    domain = spec.endpointStore.get(id),
-                    promise = new qq.Promise();
+                    domain = spec.endpointStore.get(id);
 
-                // Add appropriate headers to the multipart upload request.
-                // Once these have been determined (asynchronously) attach the headers and send the chunk.
-                chunked.initHeaders(id, chunkIdx, chunkData.blob).then(function(info) {
-                    var headers = info.headers,
-                        endOfUrl = info.endOfUrl;
-                    if (xhr._cancelled) {
-                        log(qq.format("Upload of item {}.{} cancelled. Upload will not start after successful signature request.", id, chunkIdx));
-                        promise.failure({error: "Chunk upload cancelled"});
-                    }
-                    else {
-                        var url = domain + "/" + endOfUrl;
-                        handler._registerProgressHandler(id, chunkIdx, chunkData.size);
-                        upload.track(id, xhr, chunkIdx).then(promise.success, promise.failure);
-                        xhr.open("PUT", url, true);
+                return new Promise(function(resolve, reject) {
+                    // Add appropriate headers to the multipart upload request.
+                    // Once these have been determined (asynchronously) attach the headers and send the chunk.
+                    chunked.initHeaders(id, chunkIdx, chunkData.blob).then(function(info) {
+                        var headers = info.headers,
+                            endOfUrl = info.endOfUrl,
+                            error;
+                        if (xhr._cancelled) {
+                            error = new Error(qq.format("Upload of item {}.{} cancelled. Upload will not start after successful signature request.", id, chunkIdx));
+                            log(error.message);
+                            reject(error);
+                        }
+                        else {
+                            var url = domain + "/" + endOfUrl;
+                            handler._registerProgressHandler(id, chunkIdx, chunkData.size);
+                            upload.track(id, xhr, chunkIdx).then(resolve, reject);
+                            xhr.open("PUT", url, true);
 
-                        var hasContentType = false;
-                        qq.each(headers, function(name, val) {
-                            if (name === "Content-Type") {
-                                hasContentType = true;
+                            var hasContentType = false;
+                            qq.each(headers, function(name, val) {
+                                if (name === "Content-Type") {
+                                    hasContentType = true;
+                                }
+
+                                xhr.setRequestHeader(name, val);
+                            });
+
+                            // Workaround for IE Edge
+                            if (!hasContentType) {
+                                xhr.setRequestHeader("Content-Type", "");
                             }
 
-                            xhr.setRequestHeader(name, val);
-                        });
-
-                        // Workaround for IE Edge
-                        if (!hasContentType) {
-                            xhr.setRequestHeader("Content-Type", "");
+                            xhr.send(chunkData.blob);
                         }
-
-                        xhr.send(chunkData.blob);
-                    }
-                }, function() {
-                    promise.failure({error: "Problem signing the chunk!"}, xhr);
+                    }, function() {
+                        var error = new Error("Problem signing the chunk!");
+                        error.xhr = xhr;
+                        reject(xhr);
+                    });
                 });
-
-                return promise;
             },
 
             send: function(id, chunkIdx) {
-                var promise = new qq.Promise();
+                return new Promise(function(resolve, reject) {
+                    chunked.setup(id).then(
+                        // The "Initiate" request succeeded.  We are ready to send the first chunk.
+                        function() {
+                            chunked.put(id, chunkIdx).then(resolve, reject);
+                        },
 
-                chunked.setup(id).then(
-                    // The "Initiate" request succeeded.  We are ready to send the first chunk.
-                    function() {
-                        chunked.put(id, chunkIdx).then(promise.success, promise.failure);
-                    },
-
-                    // We were unable to initiate the chunked upload process.
-                    function(errorMessage, xhr) {
-                        promise.failure({error: errorMessage}, xhr);
-                    }
-                );
-
-                return promise;
+                        // We were unable to initiate the chunked upload process.
+                        function(errorMessage, xhr) {
+                            var error = new Error(errorMessage);
+                            error.xhr = xhr;
+                            reject(error);
+                        }
+                    );
+                });
             },
 
             /**
@@ -318,20 +321,20 @@ qq.s3.XhrUploadHandler = function(spec, proxy) {
             },
 
             send: function(id) {
-                var promise = new qq.Promise(),
-                    xhr = handler._createXhr(id),
+                var xhr = handler._createXhr(id),
                     fileOrBlob = handler.getFile(id);
 
                 handler._registerProgressHandler(id);
-                upload.track(id, xhr).then(promise.success, promise.failure);
 
-                // Delegate to a function the sets up the XHR request and notifies us when it is ready to be sent, along w/ the payload.
-                simple.setup(id, xhr, fileOrBlob).then(function(toSend) {
-                    log("Sending upload request for " + id);
-                    xhr.send(toSend);
-                }, promise.failure);
+                return new Promise(function(resolve, reject) {
+                    upload.track(id, xhr).then(resolve, reject);
 
-                return promise;
+                    // Delegate to a function the sets up the XHR request and notifies us when it is ready to be sent, along w/ the payload.
+                    simple.setup(id, xhr, fileOrBlob).then(function(toSend) {
+                        log("Sending upload request for " + id);
+                        xhr.send(toSend);
+                    }, reject);
+                });
             },
 
             /**
@@ -557,53 +560,56 @@ qq.s3.XhrUploadHandler = function(spec, proxy) {
                             upload.host.promise(id).then(function() {
                                 /* jshint eqnull:true */
                                 if (optChunkIdx == null) {
-                                    simple.send(id).then(function(response, xhr) {
-                                        resolve({response: response, xhr: xhr});
-                                    }, function(errorObject, xhr) {
-                                        var error = new Error(errorObject.error);
-                                        error.xhr = xhr;
-                                        reject(error);
-                                    });
+                                    simple.send(id).then(resolve, reject);
                                 }
                                 else {
-                                    chunked.send(id, optChunkIdx).then(function(response, xhr) {
-                                        resolve({response: response, xhr: xhr});
-                                    }, function(errorObject, xhr) {
-                                        var error = new Error(errorObject.error);
-                                        error.xhr = xhr;
-                                        reject(error);
-                                    });
+                                    chunked.send(id, optChunkIdx).then(resolve, reject);
                                 }
                             });
                         });
                     },
                     function(errorReason) {
-                        reject(new Error(errorReason));
+                        var error = new Error(errorReason);
+                        error.error = errorReason
+                        reject(error);
                     });
                 });
             },
 
             track: function(id, xhr, optChunkIdx) {
-                var promise = new qq.Promise();
+                return new Promise(function(resolve, reject) {
+                    xhr.onreadystatechange = function() {
+                        if (xhr.readyState === 4) {
+                            var result,
+                                error;
 
-                xhr.onreadystatechange = function() {
-                    if (xhr.readyState === 4) {
-                        var result;
-
-                        /* jshint eqnull:true */
-                        if (optChunkIdx == null) {
-                            result = upload.done(id, xhr);
-                            promise[result.success ? "success" : "failure"](result.response, xhr);
+                            /* jshint eqnull:true */
+                            if (optChunkIdx == null) {
+                                result = upload.done(id, xhr);
+                                if (result.success) {
+                                    resolve({response: result.response, xhr: xhr});
+                                } else {
+                                    error = new Error();
+                                    error.response = result.response;
+                                    error.xhr = xhr;
+                                    reject(error);
+                                }
+                            }
+                            else {
+                                chunked.done(id, xhr, optChunkIdx);
+                                result = upload.done(id, xhr);
+                                if (result.success) {
+                                    resolve({response: result.response, xhr: xhr});
+                                } else {
+                                    error = new Error();
+                                    error.response = result.response;
+                                    error.xhr = xhr;
+                                    reject(error);
+                                }
+                            }
                         }
-                        else {
-                            chunked.done(id, xhr, optChunkIdx);
-                            result = upload.done(id, xhr);
-                            promise[result.success ? "success" : "failure"](result.response, xhr);
-                        }
-                    }
-                };
-
-                return promise;
+                    };
+                });
             }
         };
 

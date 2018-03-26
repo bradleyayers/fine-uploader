@@ -224,10 +224,14 @@ qq.s3.FormUploadHandler = function(options, proxy) {
                             handler._setThirdPartyFileId(id, key);
                             handleUpload(id).then(resolve, reject);
                         }, function(errorReason) {
-                            reject(new Error(errorReason));
+                            var error = new Error("Failed to get bucket");
+                            error.error = errorReason;
+                            reject(error);
                         });
                     }, function(errorReason) {
-                        reject(new Error(errorReason));
+                        var error = new Error("Failed to get key name");
+                        error.error = errorReason;
+                        reject(error);
                     });
                 }
             });

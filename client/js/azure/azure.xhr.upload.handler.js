@@ -133,6 +133,7 @@ qq.azure.XhrUploadHandler = function(spec, proxy) {
             errorMsg = "Problem sending file to Azure",
             error = new Error(errorMsg);
 
+        error.error = errorMsg;
         error.azureError = azureError && azureError.message;
         error.reset = xhr.status === 403;
 
