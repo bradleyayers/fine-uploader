@@ -286,7 +286,7 @@ qq.s3.XhrUploadHandler = function(spec, proxy) {
              * due to some error.
              *
              * @param id File ID
-             * @returns {qq.Promise}
+             * @returns {Promise}
              */
             initParams: function(id) {
                 /*jshint -W040 */
@@ -343,15 +343,14 @@ qq.s3.XhrUploadHandler = function(spec, proxy) {
              * @param id File ID
              * @param xhr XMLHttpRequest to use for the upload
              * @param fileOrBlob `File` or `Blob` to send
-             * @returns {qq.Promise}
+             * @returns {Promise}
              */
             setup: function(id, xhr, fileOrBlob) {
                 var formData = new FormData(),
                     endpoint = endpointStore.get(id),
-                    url = endpoint,
-                    promise = new qq.Promise();
+                    url = endpoint;
 
-                simple.initParams(id).then(
+                return simple.initParams(id).then(
                     // Success - all params determined
                     function(awsParams) {
                         xhr.open("POST", url, true);
@@ -361,16 +360,8 @@ qq.s3.XhrUploadHandler = function(spec, proxy) {
                         // AWS requires the file field be named "file".
                         formData.append("file", fileOrBlob);
 
-                        promise.success(formData);
-                    },
-
-                    // Failure - we couldn't determine some params (likely the signature)
-                    function(error) {
-                        promise.failure({error: error.message});
-                    }
-                );
-
-                return promise;
+                        return formData;
+                    });
             }
         },
 
@@ -410,20 +401,23 @@ qq.s3.XhrUploadHandler = function(spec, proxy) {
 
             host: {
                 promise: function(id) {
-                    var promise = new qq.Promise(),
-                        cachedHost = handler._getFileState(id).host;
+                    var cachedHost = handler._getFileState(id).host;
 
-                    if (cachedHost) {
-                        promise.success(cachedHost);
-                    }
-                    else {
-                        onGetHost(id).then(function(host) {
-                            handler._getFileState(id).host = host;
-                            promise.success(host);
-                        }, promise.failure);
-                    }
-
-                    return promise;
+                    return new Promise(function(resolve, reject) {
+                        if (cachedHost) {
+                            resolve(cachedHost);
+                        }
+                        else {
+                            onGetHost(id).then(function(host) {
+                                handler._getFileState(id).host = host;
+                                resolve(host);
+                            }, function(errorReason) {
+                                var error = new Error("Failed to get host");
+                                error.error = errorReason;
+                                reject(error);
+                            });
+                        }
+                    });
                 },
 
                 getName: function(id) {

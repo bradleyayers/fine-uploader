@@ -338,12 +338,11 @@ qq.s3.util = qq.s3.util || (function() {
                         resolve(awsParams);
                     },
                     function(errorMessage) {
-                        errorMessage = errorMessage || "Can't continue further with request to S3 as we did not receive " +
-                                                    "a valid signature and policy from the server.";
-
-                        log("Policy signing failed.  " + errorMessage, "error");
-
-                        reject(new Error(errorMessage));
+                        var error = new Error(errorMessage || "Can't continue further with request to S3 as we did not receive " +
+                                                              "a valid signature and policy from the server.");
+                        error.error = errorMessage;
+                        log("Policy signing failed.  " + error.message, "error");
+                        reject(error);
                     }
                 );
             });
