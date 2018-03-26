@@ -320,24 +320,28 @@ if (qqtest.canDownloadFileAsBlob) {
                     var uploadRequest = fileTestHelper.getRequests()[1];
                     uploadRequest.respond(201, null, "");
 
-                    assert.equal(fileTestHelper.getRequests().length, 3, "Wrong # of requests");
-                    uploadSuccessRequest = fileTestHelper.getRequests()[2];
+                    setTimeout(function() {
+                        assert.equal(fileTestHelper.getRequests().length, 3, "Wrong # of requests");
+                        uploadSuccessRequest = fileTestHelper.getRequests()[2];
 
-                    uploadSuccessRequestParsedBody = purl("http://test.com?" + uploadSuccessRequest.requestBody).param();
-                    assert.equal(uploadSuccessRequest.url, uploadSuccessUrl);
-                    assert.equal(uploadSuccessRequest.method, "POST");
-                    assert.equal(uploadSuccessRequest.requestHeaders["Content-Type"].indexOf("application/x-www-form-urlencoded"), 0);
-                    assert.equal(uploadSuccessRequest.requestHeaders["test-header-name"], uploadSuccessHeaders["test-header-name"]);
-                    assert.equal(uploadSuccessRequestParsedBody["test-param-name"], uploadSuccessParams["test-param-name"]);
-                    assert.equal(uploadSuccessRequestParsedBody.foo, "bar");
-                    assert.equal(uploadSuccessRequestParsedBody.blob, uploader.getBlobName(0));
-                    assert.equal(uploadSuccessRequestParsedBody.uuid, uploader.getUuid(0));
-                    assert.equal(uploadSuccessRequestParsedBody.name, uploader.getName(0));
-                    assert.equal(uploadSuccessRequestParsedBody.container, testEndpoint);
+                        uploadSuccessRequestParsedBody = purl("http://test.com?" + uploadSuccessRequest.requestBody).param();
+                        assert.equal(uploadSuccessRequest.url, uploadSuccessUrl);
+                        assert.equal(uploadSuccessRequest.method, "POST");
+                        assert.equal(uploadSuccessRequest.requestHeaders["Content-Type"].indexOf("application/x-www-form-urlencoded"), 0);
+                        assert.equal(uploadSuccessRequest.requestHeaders["test-header-name"], uploadSuccessHeaders["test-header-name"]);
+                        assert.equal(uploadSuccessRequestParsedBody["test-param-name"], uploadSuccessParams["test-param-name"]);
+                        assert.equal(uploadSuccessRequestParsedBody.foo, "bar");
+                        assert.equal(uploadSuccessRequestParsedBody.blob, uploader.getBlobName(0));
+                        assert.equal(uploadSuccessRequestParsedBody.uuid, uploader.getUuid(0));
+                        assert.equal(uploadSuccessRequestParsedBody.name, uploader.getName(0));
+                        assert.equal(uploadSuccessRequestParsedBody.container, testEndpoint);
 
-                    uploadSuccessRequest.respond(200, null, null);
-                    assert.equal(uploader.getUploads()[0].status, qq.status.UPLOAD_SUCCESSFUL);
-                    done();
+                        uploadSuccessRequest.respond(200, null, null);
+                        setTimeout(function() {
+                            assert.equal(uploader.getUploads()[0].status, qq.status.UPLOAD_SUCCESSFUL);
+                            done();
+                        }, 0);
+                    }, 0);
                 }, 0);
 
             });
@@ -365,10 +369,14 @@ if (qqtest.canDownloadFileAsBlob) {
                     var uploadRequest = fileTestHelper.getRequests()[1];
                     uploadRequest.respond(201, null, "");
 
-                    uploadSuccessRequest = fileTestHelper.getRequests()[2];
-                    assert.equal(uploadSuccessRequest.url, uploadSuccessUrl);
-                    uploadSuccessRequest.respond(200, null, JSON.stringify({success: false}));
-                    assert.equal(uploader.getUploads()[0].status, qq.status.UPLOAD_FAILED);
+                    setTimeout(function() {
+                        uploadSuccessRequest = fileTestHelper.getRequests()[2];
+                        assert.equal(uploadSuccessRequest.url, uploadSuccessUrl);
+                        uploadSuccessRequest.respond(200, null, JSON.stringify({success: false}));
+                        setTimeout(function() {
+                            assert.equal(uploader.getUploads()[0].status, qq.status.UPLOAD_FAILED);
+                        }, 0);
+                    }, 0);
                 }, 0);
 
             });
@@ -394,11 +402,15 @@ if (qqtest.canDownloadFileAsBlob) {
                     var uploadRequest = fileTestHelper.getRequests()[1];
                     uploadRequest.respond(201, null, "");
 
-                    uploadSuccessRequest = fileTestHelper.getRequests()[2];
-                    assert.equal(uploadSuccessRequest.method, "PATCH");
-                    uploadSuccessRequest.respond(200, null, null);
-                    assert.equal(uploader.getUploads()[0].status, qq.status.UPLOAD_SUCCESSFUL);
-                    done();
+                    setTimeout(function() {
+                        uploadSuccessRequest = fileTestHelper.getRequests()[2];
+                        assert.equal(uploadSuccessRequest.method, "PATCH");
+                        uploadSuccessRequest.respond(200, null, null);
+                        setTimeout(function() {
+                            assert.equal(uploader.getUploads()[0].status, qq.status.UPLOAD_SUCCESSFUL);
+                            done();
+                        }, 0);
+                    }, 0);
                 }, 0);
 
             });

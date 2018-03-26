@@ -202,37 +202,48 @@ qq.s3.FormUploadHandler = function(options, proxy) {
 
     qq.extend(this, {
         uploadFile: function(id) {
-            var name = getName(id),
-                promise = new qq.Promise();
+            var name = getName(id);
 
-            if (handler.getThirdPartyFileId(id)) {
-                if (handler._getFileState(id).bucket) {
-                    handleUpload(id).then(promise.success, promise.failure);
+            return new Promise(function(resolve, reject) {
+                if (handler.getThirdPartyFileId(id)) {
+                    if (handler._getFileState(id).bucket) {
+                        handleUpload(id).then(resolve, function (response) {
+                            var error = new Error("Upload failed");
+                            error.response = response;
+                            reject(error);
+                        });
+                    }
+                    else {
+                        onGetBucket(id).then(function(bucket) {
+                            handler._getFileState(id).bucket = bucket;
+                            handleUpload(id).then(resolve, function (response) {
+                                var error = new Error("Upload failed");
+                                error.response = response;
+                                reject(error);
+                            });
+                        });
+                    }
                 }
                 else {
-                    onGetBucket(id).then(function(bucket) {
-                        handler._getFileState(id).bucket = bucket;
-                        handleUpload(id).then(promise.success, promise.failure);
+                    // The S3 uploader module will either calculate the key or ask the server for it
+                    // and will call us back once it is known.
+                    onGetKeyName(id, name).then(function(key) {
+                        onGetBucket(id).then(function(bucket) {
+                            handler._getFileState(id).bucket = bucket;
+                            handler._setThirdPartyFileId(id, key);
+                            handleUpload(id).then(resolve, function (response) {
+                                var error = new Error("Upload failed");
+                                error.response = response;
+                                reject(error);
+                            });
+                        }, function(errorReason) {
+                            reject(new Promise(errorReason));
+                        });
+                    }, function(errorReason) {
+                        reject(new Promise(errorReason));
                     });
                 }
-            }
-            else {
-                // The S3 uploader module will either calculate the key or ask the server for it
-                // and will call us back once it is known.
-                onGetKeyName(id, name).then(function(key) {
-                    onGetBucket(id).then(function(bucket) {
-                        handler._getFileState(id).bucket = bucket;
-                        handler._setThirdPartyFileId(id, key);
-                        handleUpload(id).then(promise.success, promise.failure);
-                    }, function(errorReason) {
-                        promise.failure({error: errorReason});
-                    });
-                }, function(errorReason) {
-                    promise.failure({error: errorReason});
-                });
-            }
-
-            return promise;
+            });
         }
     });
 };

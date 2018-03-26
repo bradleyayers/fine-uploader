@@ -396,6 +396,10 @@ if (qqtest.canDownloadFileAsBlob) {
             });
 
             describe("resume records", function() {
+                beforeEach(function() {
+                    window.localStorage.clear();
+                });
+
                 var uploader;
 
                 function testResumeRecordsLogic(onUploadChunkSuccess, customKeys) {
@@ -410,7 +414,7 @@ if (qqtest.canDownloadFileAsBlob) {
                         chunking: {
                             enabled: true,
                             mandatory: true,
-                            partSize: expectedFileSize / 3
+                            partSize: Math.floor(expectedFileSize / 3)
                         },
                         callbacks: {
                             onUploadChunk: function() {
@@ -522,8 +526,12 @@ if (qqtest.canDownloadFileAsBlob) {
                 qqtest.downloadFileAsBlob("up.jpg", "image/jpeg").then(function (blob) {
                     fileTestHelper.mockXhr();
                     uploader.addFiles({name: "test", blob: blob});
-                    fileTestHelper.getRequests()[0].respond(200, null, JSON.stringify({success: true}));
-                    fileTestHelper.getRequests()[1].respond(200);
+                    setTimeout(function() {
+                        fileTestHelper.getRequests()[0].respond(200, null, JSON.stringify({success: true}));
+                        setTimeout(function() {
+                            fileTestHelper.getRequests()[1].respond(200);
+                        }, 0);
+                    }, 0);
                 });
             }
 
@@ -657,8 +665,12 @@ if (qqtest.canDownloadFileAsBlob) {
                     qqtest.downloadFileAsBlob("up.jpg", "image/jpeg").then(function (blob) {
                         fileTestHelper.mockXhr();
                         uploader.addFiles({name: "test", blob: blob});
-                        fileTestHelper.getRequests()[0].respond(200, null, JSON.stringify({success: true}));
-                        fileTestHelper.getRequests()[1].respond(chunkingSuccessStatus);
+                        setTimeout(function() {
+                            fileTestHelper.getRequests()[0].respond(200, null, JSON.stringify({success: true}));
+                            setTimeout(function() {
+                                fileTestHelper.getRequests()[1].respond(chunkingSuccessStatus);
+                            }, 0);
+                        }, 0);
                     });
                 }
 

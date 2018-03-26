@@ -680,27 +680,31 @@ if (qqtest.canDownloadFileAsBlob) {
                 var uploadSuccessRequest, uploadSuccessRequestParsedBody;
 
                 signatureRequest.respond(200, null, JSON.stringify({policy: "thepolicy", signature: "thesignature"}));
-                uploadRequest.respond(200, {ETag: "123"}, null);
+                setTimeout(function () {
+                    uploadRequest.respond(200, {ETag: "123"}, null);
 
-                assert.equal(fileTestHelper.getRequests().length, 3, "Wrong # of requests");
-                uploadSuccessRequest = fileTestHelper.getRequests()[2];
-                uploadSuccessRequestParsedBody = purl("http://test.com?" + uploadSuccessRequest.requestBody).param();
-                assert.equal(uploadSuccessRequest.url, uploadSuccessUrl);
-                assert.equal(uploadSuccessRequest.method, "POST");
-                assert.equal(uploadSuccessRequest.requestHeaders["Content-Type"].indexOf("application/x-www-form-urlencoded"), 0);
-                assert.equal(uploadSuccessRequest.requestHeaders["test-header-name"], uploadSuccessHeaders["test-header-name"]);
-                assert.equal(uploadSuccessRequestParsedBody["test-param-name"], uploadSuccessParams["test-param-name"]);
-                assert.equal(uploadSuccessRequestParsedBody.foo, "bar");
-                assert.equal(uploadSuccessRequestParsedBody.key, uploader.getKey(0));
-                assert.equal(uploadSuccessRequestParsedBody.uuid, uploader.getUuid(0));
-                assert.equal(uploadSuccessRequestParsedBody.name, uploader.getName(0));
-                assert.equal(uploadSuccessRequestParsedBody.bucket, testBucketName);
-                assert.equal(uploadSuccessRequestParsedBody.etag, "123");
+                    setTimeout(function () {
+                        assert.equal(fileTestHelper.getRequests().length, 3, "Wrong # of requests");
+                        uploadSuccessRequest = fileTestHelper.getRequests()[2];
+                        uploadSuccessRequestParsedBody = purl("http://test.com?" + uploadSuccessRequest.requestBody).param();
+                        assert.equal(uploadSuccessRequest.url, uploadSuccessUrl);
+                        assert.equal(uploadSuccessRequest.method, "POST");
+                        assert.equal(uploadSuccessRequest.requestHeaders["Content-Type"].indexOf("application/x-www-form-urlencoded"), 0);
+                        assert.equal(uploadSuccessRequest.requestHeaders["test-header-name"], uploadSuccessHeaders["test-header-name"]);
+                        assert.equal(uploadSuccessRequestParsedBody["test-param-name"], uploadSuccessParams["test-param-name"]);
+                        assert.equal(uploadSuccessRequestParsedBody.foo, "bar");
+                        assert.equal(uploadSuccessRequestParsedBody.key, uploader.getKey(0));
+                        assert.equal(uploadSuccessRequestParsedBody.uuid, uploader.getUuid(0));
+                        assert.equal(uploadSuccessRequestParsedBody.name, uploader.getName(0));
+                        assert.equal(uploadSuccessRequestParsedBody.bucket, testBucketName);
+                        assert.equal(uploadSuccessRequestParsedBody.etag, "123");
 
-                uploadSuccessRequest.respond(200, null, null);
-                assert.equal(uploader.getUploads()[0].status, qq.status.UPLOAD_SUCCESSFUL);
+                        uploadSuccessRequest.respond(200, null, null);
+                        assert.equal(uploader.getUploads()[0].status, qq.status.UPLOAD_SUCCESSFUL);
 
-                done();
+                        done();
+                    }, 0);
+                }, 0);
             });
         });
 
@@ -721,12 +725,16 @@ if (qqtest.canDownloadFileAsBlob) {
                 signatureRequest.respond(200, null, JSON.stringify({policy: "thepolicy", signature: "thesignature"}));
                 uploadRequest.respond(200, null, null);
 
-                uploadSuccessRequest = fileTestHelper.getRequests()[2];
-                assert.equal(uploadSuccessRequest.url, uploadSuccessUrl);
-                uploadSuccessRequest.respond(200, null, JSON.stringify({success: false}));
-                assert.equal(uploader.getUploads()[0].status, qq.status.UPLOAD_FAILED);
+                setTimeout(function() {
+                    uploadSuccessRequest = fileTestHelper.getRequests()[2];
+                    assert.equal(uploadSuccessRequest.url, uploadSuccessUrl);
+                    uploadSuccessRequest.respond(200, null, JSON.stringify({success: false}));
+                    setTimeout(function() {
+                        assert.equal(uploader.getUploads()[0].status, qq.status.UPLOAD_FAILED);
 
-                done();
+                        done();
+                    }, 0);
+                }, 0);
             });
         });
 
@@ -748,12 +756,14 @@ if (qqtest.canDownloadFileAsBlob) {
                 signatureRequest.respond(200, null, JSON.stringify({policy: "thepolicy", signature: "thesignature"}));
                 uploadRequest.respond(200, null, null);
 
-                uploadSuccessRequest = fileTestHelper.getRequests()[2];
-                assert.equal(uploadSuccessRequest.method, "PUT");
-                uploadSuccessRequest.respond(200, null, null);
-                assert.equal(uploader.getUploads()[0].status, qq.status.UPLOAD_SUCCESSFUL);
+                setTimeout(function() {
+                    uploadSuccessRequest = fileTestHelper.getRequests()[2];
+                    assert.equal(uploadSuccessRequest.method, "PUT");
+                    uploadSuccessRequest.respond(200, null, null);
+                    assert.equal(uploader.getUploads()[0].status, qq.status.UPLOAD_SUCCESSFUL);
 
-                done();
+                    done();
+                }, 0);
             });
         });
     });

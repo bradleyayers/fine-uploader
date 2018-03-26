@@ -542,26 +542,36 @@ qq.s3.XhrUploadHandler = function(spec, proxy) {
                 var id = params.id;
                 var optChunkIdx = params.chunkIdx;
 
-                var promise = new qq.Promise();
-
-                upload.key.promise(id).then(function() {
-                    upload.bucket.promise(id).then(function() {
-                        upload.host.promise(id).then(function() {
-                            /* jshint eqnull:true */
-                            if (optChunkIdx == null) {
-                                simple.send(id).then(promise.success, promise.failure);
-                            }
-                            else {
-                                chunked.send(id, optChunkIdx).then(promise.success, promise.failure);
-                            }
+                return new Promise(function(resolve, reject) {
+                    upload.key.promise(id).then(function() {
+                        upload.bucket.promise(id).then(function() {
+                            upload.host.promise(id).then(function() {
+                                /* jshint eqnull:true */
+                                if (optChunkIdx == null) {
+                                    simple.send(id).then(function(response, xhr) {
+                                        resolve({response: response, xhr: xhr});
+                                    }, function(errorObject, xhr) {
+                                        var error = new Error(errorObject.error);
+                                        error.xhr = xhr;
+                                        reject(error);
+                                    });
+                                }
+                                else {
+                                    chunked.send(id, optChunkIdx).then(function(response, xhr) {
+                                        resolve({response: response, xhr: xhr});
+                                    }, function(errorObject, xhr) {
+                                        var error = new Error(errorObject.error);
+                                        error.xhr = xhr;
+                                        reject(error);
+                                    });
+                                }
+                            });
                         });
+                    },
+                    function(errorReason) {
+                        reject(new Error(errorReason));
                     });
-                },
-                function(errorReason) {
-                    promise.failure({error: errorReason});
                 });
-
-                return promise;
             },
 
             track: function(id, xhr, optChunkIdx) {

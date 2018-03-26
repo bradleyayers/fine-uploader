@@ -153,14 +153,14 @@
                     deleteBlobSasUri[id] = sasUri;
                     deleteBlob.send(id);
                 },
-                getSasFailure = function(id, reason, xhr) {
+                getSasFailure = function(id, error) {
                     if (relatedToCancel) {
                         self.log("Will cancel upload, but cannot remove uncommitted parts from Azure due to issue retrieving SAS", "error");
                         qq.FineUploaderBasic.prototype._onCancel.call(self, id, self.getName(id));
                     }
                     else {
-                        self._onDeleteComplete(id, xhr, true);
-                        self._options.callbacks.onDeleteComplete(id, xhr, true);
+                        self._onDeleteComplete(id, error.xhr, true);
+                        self._options.callbacks.onDeleteComplete(id, error.xhr, true);
                     }
                 },
                 deleteBlob = new qq.azure.DeleteBlob({

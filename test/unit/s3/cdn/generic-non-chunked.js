@@ -43,11 +43,13 @@ if (qqtest.canDownloadFileAsBlob) {
 
                             uploadRequest.respond(200, {ETag: "123"}, null);
 
-                            uploadSuccessRequest = fileTestHelper.getRequests()[2];
-                            uploadSuccessRequestParsedBody = purl("http://test.com?" + uploadSuccessRequest.requestBody).param();
-                            assert.equal(uploadSuccessRequestParsedBody.bucket, "mybucket");
+                            setTimeout(function () {
+                                uploadSuccessRequest = fileTestHelper.getRequests()[2];
+                                uploadSuccessRequestParsedBody = purl("http://test.com?" + uploadSuccessRequest.requestBody).param();
+                                assert.equal(uploadSuccessRequestParsedBody.bucket, "mybucket");
 
-                            done();
+                                done();
+                            }, 0);
                         }, 10);
                     }, 10);
                 });
