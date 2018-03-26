@@ -231,9 +231,11 @@ if (qqtest.canDownloadFileAsBlob) {
                                             assert.equal(authParts[2], "x-amz-date,Signature=thesignature");
                                             multipartCompleteRequest.respond(200, null, "<CompleteMultipartUploadResult><Bucket>" + testBucketName + "</Bucket><Key>" + uploader.getKey(0) + "</Key></CompleteMultipartUploadResult>");
 
-                                            assert.equal(uploader.getUploads()[0].status, qq.status.UPLOAD_SUCCESSFUL);
+                                            setTimeout(function() {
+                                                assert.equal(uploader.getUploads()[0].status, qq.status.UPLOAD_SUCCESSFUL);
 
-                                            done();
+                                                done();
+                                            }, 0);
                                         }, 0);
                                     }, 0);
                                 }, 100);
@@ -407,8 +409,10 @@ if (qqtest.canDownloadFileAsBlob) {
                             assert.equal(multipartCompleteRequest.requestBody, "<CompleteMultipartUpload><Part><PartNumber>1</PartNumber><ETag>etag1</ETag></Part><Part><PartNumber>2</PartNumber><ETag>etag2</ETag></Part></CompleteMultipartUpload>");
                             multipartCompleteRequest.respond(200, null, "<CompleteMultipartUploadResult><Bucket>" + testBucketName + "</Bucket><Key>" + uploader.getKey(0) + "</Key></CompleteMultipartUploadResult>");
 
-                            assert.equal(uploader.getUploads()[0].status, qq.status.UPLOAD_SUCCESSFUL);
-                            done();
+                            setTimeout(function() {
+                                assert.equal(uploader.getUploads()[0].status, qq.status.UPLOAD_SUCCESSFUL);
+                                done();
+                            }, 0);
                         }, 0);
                     }, 0);
                 });
@@ -491,7 +495,9 @@ if (qqtest.canDownloadFileAsBlob) {
                             assert.ok(!multipartCompleteRequest.requestHeaders[qq.s3.util.REDUCED_REDUNDANCY_PARAM_NAME]);
                             multipartCompleteRequest.respond(200, null, "<CompleteMultipartUploadResult><Bucket>" + testBucketName + "</Bucket><Key>" + uploader.getKey(0) + "</Key></CompleteMultipartUploadResult>");
 
-                            assert.equal(uploader.getUploads()[0].status, qq.status.UPLOAD_SUCCESSFUL);
+                            setTimeout(function () {
+                                assert.equal(uploader.getUploads()[0].status, qq.status.UPLOAD_SUCCESSFUL);
+                            }, 0);
                         }, 0);
                     }, 0);
                 });
@@ -685,50 +691,56 @@ if (qqtest.canDownloadFileAsBlob) {
                                                         assert.ok(uploadCompleteToSign.headers.indexOf("/" + testBucketName + "/" + uploader.getKey(0) + "?uploadId=123") > 0);
                                                         uploadCompleteSignatureRequest.respond(400, null, JSON.stringify({signature: "thesignature"}));
 
-                                                        assert.equal(uploader.getUploads()[0].status, qq.status.UPLOAD_FAILED);
-                                                        assert.equal(fileTestHelper.getRequests().length, 18);
-                                                        uploader.retry(0);
-                                                        assert.equal(uploader.getUploads()[0].status, qq.status.UPLOADING);
-
-                                                        // successful signature request for multipart complete
-                                                        assert.equal(fileTestHelper.getRequests().length, 19);
-                                                        uploadCompleteSignatureRequest = fileTestHelper.getRequests()[18];
-                                                        assert.equal(uploadCompleteSignatureRequest.url, testSignatureEndoint);
-                                                        uploadCompleteToSign = JSON.parse(uploadCompleteSignatureRequest.requestBody);
-                                                        assert.ok(uploadCompleteToSign.headers.indexOf("/" + testBucketName + "/" + uploader.getKey(0) + "?uploadId=123") > 0);
-                                                        uploadCompleteSignatureRequest.respond(200, null, JSON.stringify({signature: "thesignature"}));
-
-                                                        // failing multipart complete request
-                                                        assert.equal(fileTestHelper.getRequests().length, 20);
-                                                        multipartCompleteRequest = fileTestHelper.getRequests()[19];
-                                                        assert.equal(multipartCompleteRequest.url, testS3Endpoint + "/" + uploader.getKey(0) + "?uploadId=123");
-                                                        assert.equal(multipartCompleteRequest.requestBody, "<CompleteMultipartUpload><Part><PartNumber>1</PartNumber><ETag>etag1_a</ETag></Part><Part><PartNumber>2</PartNumber><ETag>etag2_a</ETag></Part></CompleteMultipartUpload>");
-                                                        multipartCompleteRequest.respond(200, null, "<CompleteMultipartUploadResult><Key>" + uploader.getKey(0) + "</Key></CompleteMultipartUploadResult>");
-
-                                                        assert.equal(uploader.getUploads()[0].status, qq.status.UPLOAD_FAILED);
-                                                        assert.equal(fileTestHelper.getRequests().length, 20);
-                                                        uploader.retry(0);
-                                                        assert.equal(uploader.getUploads()[0].status, qq.status.UPLOADING);
-
-                                                        // successful signature request for multipart complete
-                                                        assert.equal(fileTestHelper.getRequests().length, 21);
-                                                        uploadCompleteSignatureRequest = fileTestHelper.getRequests()[20];
-                                                        assert.equal(uploadCompleteSignatureRequest.url, testSignatureEndoint);
-                                                        uploadCompleteToSign = JSON.parse(uploadCompleteSignatureRequest.requestBody);
-                                                        assert.ok(uploadCompleteToSign.headers.indexOf("/" + testBucketName + "/" + uploader.getKey(0) + "?uploadId=123") > 0);
-                                                        uploadCompleteSignatureRequest.respond(200, null, JSON.stringify({signature: "thesignature"}));
-
                                                         setTimeout(function() {
-                                                            // successful multipart complete request
-                                                            assert.equal(fileTestHelper.getRequests().length, 22);
-                                                            multipartCompleteRequest = fileTestHelper.getRequests()[21];
+                                                            assert.equal(uploader.getUploads()[0].status, qq.status.UPLOAD_FAILED);
+                                                            assert.equal(fileTestHelper.getRequests().length, 18);
+                                                            uploader.retry(0);
+                                                            assert.equal(uploader.getUploads()[0].status, qq.status.UPLOADING);
+
+                                                            // successful signature request for multipart complete
+                                                            assert.equal(fileTestHelper.getRequests().length, 19);
+                                                            uploadCompleteSignatureRequest = fileTestHelper.getRequests()[18];
+                                                            assert.equal(uploadCompleteSignatureRequest.url, testSignatureEndoint);
+                                                            uploadCompleteToSign = JSON.parse(uploadCompleteSignatureRequest.requestBody);
+                                                            assert.ok(uploadCompleteToSign.headers.indexOf("/" + testBucketName + "/" + uploader.getKey(0) + "?uploadId=123") > 0);
+                                                            uploadCompleteSignatureRequest.respond(200, null, JSON.stringify({signature: "thesignature"}));
+
+                                                            // failing multipart complete request
+                                                            assert.equal(fileTestHelper.getRequests().length, 20);
+                                                            multipartCompleteRequest = fileTestHelper.getRequests()[19];
                                                             assert.equal(multipartCompleteRequest.url, testS3Endpoint + "/" + uploader.getKey(0) + "?uploadId=123");
                                                             assert.equal(multipartCompleteRequest.requestBody, "<CompleteMultipartUpload><Part><PartNumber>1</PartNumber><ETag>etag1_a</ETag></Part><Part><PartNumber>2</PartNumber><ETag>etag2_a</ETag></Part></CompleteMultipartUpload>");
-                                                            multipartCompleteRequest.respond(200, null, "<CompleteMultipartUploadResult><Bucket>" + testBucketName + "</Bucket><Key>" + uploader.getKey(0) + "</Key></CompleteMultipartUploadResult>");
+                                                            multipartCompleteRequest.respond(200, null, "<CompleteMultipartUploadResult><Key>" + uploader.getKey(0) + "</Key></CompleteMultipartUploadResult>");
 
-                                                            assert.equal(uploader.getUploads()[0].status, qq.status.UPLOAD_SUCCESSFUL);
+                                                            setTimeout(function() {
+                                                                assert.equal(uploader.getUploads()[0].status, qq.status.UPLOAD_FAILED);
+                                                                assert.equal(fileTestHelper.getRequests().length, 20);
+                                                                uploader.retry(0);
+                                                                assert.equal(uploader.getUploads()[0].status, qq.status.UPLOADING);
 
-                                                            done();
+                                                                // successful signature request for multipart complete
+                                                                assert.equal(fileTestHelper.getRequests().length, 21);
+                                                                uploadCompleteSignatureRequest = fileTestHelper.getRequests()[20];
+                                                                assert.equal(uploadCompleteSignatureRequest.url, testSignatureEndoint);
+                                                                uploadCompleteToSign = JSON.parse(uploadCompleteSignatureRequest.requestBody);
+                                                                assert.ok(uploadCompleteToSign.headers.indexOf("/" + testBucketName + "/" + uploader.getKey(0) + "?uploadId=123") > 0);
+                                                                uploadCompleteSignatureRequest.respond(200, null, JSON.stringify({signature: "thesignature"}));
+
+                                                                setTimeout(function() {
+                                                                    // successful multipart complete request
+                                                                    assert.equal(fileTestHelper.getRequests().length, 22);
+                                                                    multipartCompleteRequest = fileTestHelper.getRequests()[21];
+                                                                    assert.equal(multipartCompleteRequest.url, testS3Endpoint + "/" + uploader.getKey(0) + "?uploadId=123");
+                                                                    assert.equal(multipartCompleteRequest.requestBody, "<CompleteMultipartUpload><Part><PartNumber>1</PartNumber><ETag>etag1_a</ETag></Part><Part><PartNumber>2</PartNumber><ETag>etag2_a</ETag></Part></CompleteMultipartUpload>");
+                                                                    multipartCompleteRequest.respond(200, null, "<CompleteMultipartUploadResult><Bucket>" + testBucketName + "</Bucket><Key>" + uploader.getKey(0) + "</Key></CompleteMultipartUploadResult>");
+
+                                                                    setTimeout(function() {
+                                                                        assert.equal(uploader.getUploads()[0].status, qq.status.UPLOAD_SUCCESSFUL);
+
+                                                                        done();
+                                                                    }, 0);
+                                                                }, 0);
+                                                            }, 0);
                                                         }, 0);
                                                     }, 0);
                                                 }, 0);
@@ -876,8 +888,10 @@ if (qqtest.canDownloadFileAsBlob) {
                             assert.equal(multipartCompleteRequest.requestBody, "<CompleteMultipartUpload><Part><PartNumber>1</PartNumber><ETag>etag1</ETag></Part><Part><PartNumber>2</PartNumber><ETag>etag2</ETag></Part></CompleteMultipartUpload>");
                             multipartCompleteRequest.respond(200, null, "<CompleteMultipartUploadResult><Bucket>" + testBucketName + "</Bucket><Key>" + uploader.getKey(0) + "</Key></CompleteMultipartUploadResult>");
 
-                            assert.equal(uploader.getUploads()[0].status, qq.status.UPLOAD_SUCCESSFUL);
-                            done();
+                            setTimeout(function() {
+                                assert.equal(uploader.getUploads()[0].status, qq.status.UPLOAD_SUCCESSFUL);
+                                done();
+                            }, 0);
                         }, 0);
                     }, 0);
                 });
@@ -963,19 +977,23 @@ if (qqtest.canDownloadFileAsBlob) {
                                         assert.equal(multipartCompleteRequest.requestBody, "<CompleteMultipartUpload><Part><PartNumber>1</PartNumber><ETag>etag1_a</ETag></Part><Part><PartNumber>2</PartNumber><ETag>etag2_a</ETag></Part></CompleteMultipartUpload>");
                                         multipartCompleteRequest.respond(200, null, "<CompleteMultipartUploadResult><Key>" + uploader.getKey(0) + "</Key></CompleteMultipartUploadResult>");
 
-                                        assert.equal(uploader.getUploads()[0].status, qq.status.UPLOAD_FAILED);
-                                        assert.equal(fileTestHelper.getRequests().length, 7);
-                                        uploader.retry(0);
-                                        assert.equal(uploader.getUploads()[0].status, qq.status.UPLOADING);
+                                        setTimeout(function() {
+                                            assert.equal(uploader.getUploads()[0].status, qq.status.UPLOAD_FAILED);
+                                            assert.equal(fileTestHelper.getRequests().length, 7);
+                                            uploader.retry(0);
+                                            assert.equal(uploader.getUploads()[0].status, qq.status.UPLOADING);
 
-                                        // successful multipart complete request
-                                        assert.equal(fileTestHelper.getRequests().length, 8);
-                                        multipartCompleteRequest = fileTestHelper.getRequests()[7];
-                                        assert.equal(multipartCompleteRequest.url, testS3Endpoint + "/" + uploader.getKey(0) + "?uploadId=123");
-                                        assert.equal(multipartCompleteRequest.requestBody, "<CompleteMultipartUpload><Part><PartNumber>1</PartNumber><ETag>etag1_a</ETag></Part><Part><PartNumber>2</PartNumber><ETag>etag2_a</ETag></Part></CompleteMultipartUpload>");
-                                        multipartCompleteRequest.respond(200, null, "<CompleteMultipartUploadResult><Bucket>" + testBucketName + "</Bucket><Key>" + uploader.getKey(0) + "</Key></CompleteMultipartUploadResult>");
+                                            // successful multipart complete request
+                                            assert.equal(fileTestHelper.getRequests().length, 8);
+                                            multipartCompleteRequest = fileTestHelper.getRequests()[7];
+                                            assert.equal(multipartCompleteRequest.url, testS3Endpoint + "/" + uploader.getKey(0) + "?uploadId=123");
+                                            assert.equal(multipartCompleteRequest.requestBody, "<CompleteMultipartUpload><Part><PartNumber>1</PartNumber><ETag>etag1_a</ETag></Part><Part><PartNumber>2</PartNumber><ETag>etag2_a</ETag></Part></CompleteMultipartUpload>");
+                                            multipartCompleteRequest.respond(200, null, "<CompleteMultipartUploadResult><Bucket>" + testBucketName + "</Bucket><Key>" + uploader.getKey(0) + "</Key></CompleteMultipartUploadResult>");
 
-                                        assert.equal(uploader.getUploads()[0].status, qq.status.UPLOAD_SUCCESSFUL);
+                                            setTimeout(function() {
+                                                assert.equal(uploader.getUploads()[0].status, qq.status.UPLOAD_SUCCESSFUL);
+                                            }, 0);
+                                        }, 0);
                                     }, 0);
                                 }, 0);
                             }, 0);

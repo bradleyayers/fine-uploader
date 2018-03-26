@@ -78,9 +78,11 @@ if (qqtest.canDownloadFileAsBlob) {
                                 multipartCompleteRequest = fileTestHelper.getRequests()[7];
                                 multipartCompleteRequest.respond(200, null, "<CompleteMultipartUploadResult><Bucket>mybucket</Bucket><Key>" + uploader.getKey(0) + "</Key></CompleteMultipartUploadResult>");
 
-                                assert.equal(uploader.getUploads()[0].status, qq.status.UPLOAD_SUCCESSFUL);
+                                setTimeout(function() {
+                                    assert.equal(uploader.getUploads()[0].status, qq.status.UPLOAD_SUCCESSFUL);
 
-                                done();
+                                    done();
+                                }, 0);
                             }, 0);
                         }, 0);
                     });

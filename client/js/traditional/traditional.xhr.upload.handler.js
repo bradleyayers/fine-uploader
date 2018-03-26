@@ -118,21 +118,22 @@ qq.traditional.XhrUploadHandler = function(spec, proxy) {
         },
 
         sendChunksCompleteRequest = function(id) {
-            var promise = new qq.Promise();
-
-            allChunksDoneRequester.complete(
-                    id,
-                    handler._createXhr(id),
-                    getChunksCompleteParams(id),
-                    spec.customHeaders.get(id)
-                )
-                .then(function(xhr) {
-                    promise.success(parseResponse(false, xhr), xhr);
-                }, function(xhr) {
-                    promise.failure(parseResponse(false, xhr), xhr);
-                });
-
-            return promise;
+            return new Promise(function(resolve, reject) {
+                allChunksDoneRequester.complete(
+                        id,
+                        handler._createXhr(id),
+                        getChunksCompleteParams(id),
+                        spec.customHeaders.get(id)
+                    )
+                    .then(function(xhr) {
+                        resolve({response: parseResponse(false, xhr), xhr: xhr});
+                    }, function(xhr) {
+                        var error = new Error("All chunks done requester failed");
+                        error.response = parseResponse(false, xhr);
+                        error.xhr = xhr;
+                        reject(error);
+                    });
+            });
         },
 
         setParamsAndGetEntityToSend = function(entityToSendParams) {

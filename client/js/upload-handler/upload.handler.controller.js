@@ -62,7 +62,9 @@ qq.UploadHandlerController = function(o, namespace) {
 
             log("All chunks have been uploaded for " + id + " - finalizing....");
             handler.finalizeChunks(id).then(
-                function(response, xhr) {
+                function(info) {
+                    var response = info.response,
+                        xhr = info.xhr;
                     log("Finalize successful for " + id);
 
                     var normaizedResponse = upload.normalizeResponse(response, true);
@@ -71,8 +73,9 @@ qq.UploadHandlerController = function(o, namespace) {
                     handler._maybeDeletePersistedChunkData(id);
                     upload.cleanup(id, normaizedResponse, xhr);
                 },
-                function(response, xhr) {
-                    var normalizedResponse = upload.normalizeResponse(response, false);
+                function(error) {
+                    var xhr = error.xhr;
+                    var normalizedResponse = upload.normalizeResponse(error.response, false);
 
                     log("Problem finalizing chunks for file ID " + id + " - " + normalizedResponse.error, "error");
 

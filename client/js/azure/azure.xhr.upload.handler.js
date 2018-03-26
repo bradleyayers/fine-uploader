@@ -59,27 +59,24 @@ qq.azure.XhrUploadHandler = function(spec, proxy) {
         };
 
     function combineChunks(id) {
-        var promise = new qq.Promise();
+        return new Promise(function(resolve, reject) {
+            getSignedUrl(id).then(function(sasUri) {
+                var mimeType = handler._getMimeType(id),
+                    blockIdEntries = handler._getPersistableData(id).blockIdEntries;
 
-        getSignedUrl(id).then(function(sasUri) {
-            var mimeType = handler._getMimeType(id),
-                blockIdEntries = handler._getPersistableData(id).blockIdEntries;
-
-            api.putBlockList.send(id, sasUri, blockIdEntries, mimeType, function(xhr) {
-                handler._registerXhr(id, null, xhr, api.putBlockList);
-            })
-                .then(function(xhr) {
-                    log("Success combining chunks for id " + id);
-                    promise.success({}, xhr);
-                }, function(xhr) {
-                    log("Attempt to combine chunks failed for id " + id, "error");
-                    handleFailure(xhr, promise);
-                });
-
-        },
-        promise.failure);
-
-        return promise;
+                api.putBlockList.send(id, sasUri, blockIdEntries, mimeType, function(xhr) {
+                    handler._registerXhr(id, null, xhr, api.putBlockList);
+                })
+                    .then(function(xhr) {
+                        log("Success combining chunks for id " + id);
+                        resolve({response: {}, xhr: xhr});
+                    }, function(xhr) {
+                        log("Attempt to combine chunks failed for id " + id, "error");
+                        reject(buildError(xhr));
+                    });
+            },
+            reject);
+        });
     }
 
     function determineBlobUrl(id) {

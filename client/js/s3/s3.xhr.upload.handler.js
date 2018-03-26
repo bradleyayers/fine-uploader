@@ -35,18 +35,22 @@ qq.s3.XhrUploadHandler = function(spec, proxy) {
             // when the response to this request has been parsed.
             combine: function(id) {
                 var uploadId = handler._getPersistableData(id).uploadId,
-                    etagMap = handler._getPersistableData(id).etags,
-                    result = new qq.Promise();
+                    etagMap = handler._getPersistableData(id).etags;
 
-                requesters.completeMultipart.send(id, uploadId, etagMap).then(
-                    result.success,
+                return new Promise(function(resolve, reject) {
+                    requesters.completeMultipart.send(id, uploadId, etagMap).then(
+                        function(response, xhr) {
+                            resolve({response: response, xhr: xhr});
+                        },
 
-                    function failure(reason, xhr) {
-                        result.failure(upload.done(id, xhr).response, xhr);
-                    }
-                );
-
-                return result;
+                        function failure(reason, xhr) {
+                            var error = new Error(reason);
+                            error.xhr = xhr;
+                            error.response = upload.done(id, xhr).response;
+                            reject(error);
+                        }
+                    );
+                });
             },
 
             // The last step in handling a chunked upload.  This is called after each chunk has been sent.
