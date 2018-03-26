@@ -240,7 +240,7 @@ if (qqtest.canDownloadFileAsBlob) {
                                     }, 0);
                                 }, 100);
                             }, 100);
-                        }, 0)
+                        }, 0);
                     });
                 });
             });
@@ -801,7 +801,7 @@ if (qqtest.canDownloadFileAsBlob) {
         describe("client-side signature-based chunked S3 upload tests", function() {
             beforeEach(function () {
                 localStorage.clear();
-            })
+            });
 
             var startTypicalTest = function(uploader, callback) {
                     qqtest.downloadFileAsBlob("up.jpg", "image/jpeg").then(function (blob) {
