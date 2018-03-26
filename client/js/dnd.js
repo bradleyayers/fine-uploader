@@ -89,8 +89,7 @@ qq.DragAndDrop = function(o) {
 
     // Promissory.  Guaranteed to read all files in the root of the passed directory.
     function getFilesInDirectory(entry, reader, accumEntries) {
-        var promise = existingPromise,
-            dirReader = reader || entry.createReader();
+        var dirReader = reader || entry.createReader();
 
         return new Promise(function(resolve, reject) {
             dirReader.readEntries(
