@@ -105,7 +105,7 @@ qq.s3.InitiateMultipartAjaxRequester = function(o) {
         var promise = pendingInitiateRequests[id],
             domParser = new DOMParser(),
             responseDoc = domParser.parseFromString(xhr.responseText, "application/xml"),
-            uploadIdElements, messageElements, uploadId, errorMessage, status;
+            uploadIdElements, messageElements, uploadId, errorMessage, status, error;
 
         delete pendingInitiateRequests[id];
 
@@ -138,11 +138,13 @@ qq.s3.InitiateMultipartAjaxRequester = function(o) {
                 options.log(qq.format("Unexplained error with initiate multipart upload request for {}.  Status code {}.", id, status), "error");
             }
 
-            promise.failure("Problem initiating upload request.", xhr);
+            error = new Error("Problem initiating upload request.");
+            error.xhr = xhr;
+            promise.reject(error);
         }
         else {
             options.log(qq.format("Initiate multipart upload request successful for {}.  Upload ID is {}", id, uploadId));
-            promise.success(uploadId, xhr);
+            promise.resolve({uploadId: uploadId, xhr: xhr});
         }
     }
 
@@ -161,27 +163,28 @@ qq.s3.InitiateMultipartAjaxRequester = function(o) {
 
     qq.extend(this, {
         /**
-         * Sends the "Initiate MPU" request to AWS via the REST API.  First, though, we must get a signature from the
-         * local server for the request.  If all is successful, the uploadId from AWS will be passed into the promise's
-         * success handler. Otherwise, an error message will ultimately be passed into the failure method.
+         * Sends the "Initiate MPU" request to AWS via the REST API.  First,
+         * though, we must get a signature from the local server for the
+         * request.  If all is successful, the promise will be resolved with
+         * `{uploadId: string, xhr: XMLHttpRequest}` from AWS. Otherwise, it
+         * will be rejected with an error with an `xhr` property.
          *
          * @param id The ID associated with the file
-         * @returns {qq.Promise}
+         * @returns {Promise}
          */
         send: function(id) {
-            var promise = new qq.Promise();
-
-            getHeaders(id).then(function(info) {
+            return getHeaders(id).then(function(info) {
                 options.log("Submitting S3 initiate multipart upload request for " + id);
 
-                pendingInitiateRequests[id] = promise;
-                requester.initTransport(id)
-                    .withPath(info.endOfUrl)
-                    .withHeaders(info.headers)
-                    .send();
-            }, promise.failure);
+                return new Promise(function(resolve, reject) {
+                    pendingInitiateRequests[id] = {resolve: resolve, reject: reject};
 
-            return promise;
+                    requester.initTransport(id)
+                        .withPath(info.endOfUrl)
+                        .withHeaders(info.headers)
+                        .send();
+                });
+            });
         }
     });
 };

@@ -177,14 +177,12 @@ qq.s3.XhrUploadHandler = function(spec, proxy) {
                     if (!uploadId) {
                         handler._getPersistableData(id).uploadId = new Promise(function(resolve, reject) {
                             requesters.initiateMultipart.send(id).then(
-                                function(uploadId) {
-                                    handler._getPersistableData(id).uploadId = uploadId;
-                                    resolve(uploadId);
-                                    setupResolve(uploadId);
+                                function(info) {
+                                    handler._getPersistableData(id).uploadId = info.uploadId;
+                                    resolve(info.uploadId);
+                                    setupResolve(info.uploadId);
                                 },
-                                function(errorMsg, xhr) {
-                                    var error = new Error(errorMsg);
-                                    error.xhr = xhr;
+                                function(error) {
                                     handler._getPersistableData(id).uploadId = null;
                                     setupReject(error);
                                     reject(error);
@@ -193,8 +191,8 @@ qq.s3.XhrUploadHandler = function(spec, proxy) {
                         });
                     }
                     else if (uploadId instanceof Promise) {
-                        uploadId.then(function(uploadId) {
-                            setupResolve(uploadId);
+                        uploadId.then(function(info) {
+                            setupResolve(info.uploadId);
                         });
                     }
                     else {
