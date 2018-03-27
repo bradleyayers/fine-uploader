@@ -286,29 +286,31 @@
 
         _determineObjectPropertyValue: function(id, property) {
             var maybe = this._options.objectProperties[property],
-                promise = new qq.Promise(),
+                promise,
                 self = this;
 
-            if (qq.isFunction(maybe)) {
-                maybe = maybe(id);
-                if (qq.isGenericPromise(maybe)) {
-                    promise = maybe;
+            promise = new Promise(function(resolve, reject) {
+                if (qq.isFunction(maybe)) {
+                    maybe = maybe(id);
+                    if (qq.isGenericPromise(maybe)) {
+                        maybe.then(resolve, reject);
+                    }
+                    else {
+                        resolve(maybe);
+                    }
                 }
-                else {
-                    promise.success(maybe);
+                else if (qq.isString(maybe)) {
+                    resolve(maybe);
                 }
-            }
-            else if (qq.isString(maybe)) {
-                promise.success(maybe);
-            }
+            });
 
             promise.then(
                 function success(value) {
                     self["_" + property + "s"][id] = value;
                 },
 
-                function failure(errorMsg) {
-                    qq.log("Problem determining " + property + " for ID " + id + " (" + errorMsg + ")", "error");
+                function failure(error) {
+                    qq.log("Problem determining " + property + " for ID " + id + " (" + error.message + ")", "error");
                 }
             );
 
