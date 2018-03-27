@@ -777,8 +777,10 @@
 
                         // If the internal `_onComplete` handler returns a promise, don't invoke the `onComplete` callback
                         // until the promise has been fulfilled.
-                        if (retVal instanceof  qq.Promise) {
-                            retVal.done(function() {
+                        if (retVal instanceof Promise) {
+                            retVal.then(function() {
+                                self._options.callbacks.onComplete(id, name, result, xhr);
+                            }, function() {
                                 self._options.callbacks.onComplete(id, name, result, xhr);
                             });
                         }
