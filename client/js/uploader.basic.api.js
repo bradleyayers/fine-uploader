@@ -1762,13 +1762,11 @@
                 }
 
                 setTimeout(function() {
-                    self._session.refresh().then(function(response, xhrOrXdr) {
+                    self._session.refresh().then(function(info) {
                         self._sessionRequestComplete();
-                        self._options.callbacks.onSessionRequestComplete(response, true, xhrOrXdr);
-
-                    }, function(response, xhrOrXdr) {
-
-                        self._options.callbacks.onSessionRequestComplete(response, false, xhrOrXdr);
+                        self._options.callbacks.onSessionRequestComplete(info.fileItems, true, info.xhrOrXdr);
+                    }, function(error) {
+                        self._options.callbacks.onSessionRequestComplete(error.fileItems, false, error.xhrOrXdr);
                     });
                 }, 0);
             }

@@ -71,27 +71,19 @@ qq.Session = function(spec) {
     }
 
     // Initiate a call to the server that will be used to populate the initial file list.
-    // Returns a `qq.Promise`.
+    // Returns a `Promise`.
     this.refresh = function() {
         /*jshint indent:false */
-        var refreshEffort = new qq.Promise(),
-            refreshCompleteCallback = function(response, success, xhrOrXdr) {
-                handleFileItems(response, success, xhrOrXdr, refreshEffort).then(
-                    function(info) {
-                        refreshEffort.success(info.fileItems, info.xhrOrXdr);
-                    },
-                    function (error) {
-                        refreshEffort.failure(error.fileItems, error.xhrOrXdr);
-                    }
+        return new Promise(function(resolve, reject) {
+            var refreshCompleteCallback = function(response, success, xhrOrXdr) {
+                    handleFileItems(response, success, xhrOrXdr).then(resolve, reject);
+                },
+                requesterOptions = qq.extend({}, options),
+                requester = new qq.SessionAjaxRequester(
+                    qq.extend(requesterOptions, {onComplete: refreshCompleteCallback})
                 );
-            },
-            requesterOptions = qq.extend({}, options),
-            requester = new qq.SessionAjaxRequester(
-                qq.extend(requesterOptions, {onComplete: refreshCompleteCallback})
-            );
 
-        requester.queryServer();
-
-        return refreshEffort;
+            requester.queryServer();
+        });
     };
 };
