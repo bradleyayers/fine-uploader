@@ -167,48 +167,56 @@
         },
 
         // Generate a variable size thumbnail on an img or canvas,
-        // returning a promise that is fulfilled when the attempt completes.
+        // returning a promise that is resolved when the attempt completes.
         // Thumbnail can either be based off of a URL for an image returned
         // by the server in the upload response, or the associated `Blob`.
         drawThumbnail: function(fileId, imgOrCanvas, maxSize, fromServer, customResizeFunction) {
-            var promiseToReturn = new qq.Promise(),
-                fileOrUrl, options;
+            var self = this;
 
-            if (this._imageGenerator) {
-                fileOrUrl = this._thumbnailUrls[fileId];
-                options = {
-                    customResizeFunction: customResizeFunction,
-                    maxSize: maxSize > 0 ? maxSize : null,
-                    scale: maxSize > 0
-                };
+            return new Promise(function(resolve, reject) {
+                var fileOrUrl, options, error;
 
-                // If client-side preview generation is possible
-                // and we are not specifically looking for the image URl returned by the server...
-                if (!fromServer && qq.supportedFeatures.imagePreviews) {
-                    fileOrUrl = this.getFile(fileId);
-                }
+                if (self._imageGenerator) {
+                    fileOrUrl = self._thumbnailUrls[fileId];
+                    options = {
+                        customResizeFunction: customResizeFunction,
+                        maxSize: maxSize > 0 ? maxSize : null,
+                        scale: maxSize > 0
+                    };
 
-                /* jshint eqeqeq:false,eqnull:true */
-                if (fileOrUrl == null) {
-                    promiseToReturn.failure({container: imgOrCanvas, error: "File or URL not found."});
+                    // If client-side preview generation is possible
+                    // and we are not specifically looking for the image URl returned by the server...
+                    if (!fromServer && qq.supportedFeatures.imagePreviews) {
+                        fileOrUrl = self.getFile(fileId);
+                    }
+
+                    /* jshint eqeqeq:false,eqnull:true */
+                    if (fileOrUrl == null) {
+                        error = new Error("File or URL not found.");
+                        error.error = error.message;
+                        error.container = imgOrCanvas;
+                        reject(error);
+                    }
+                    else {
+                        self._imageGenerator.generate(fileOrUrl, imgOrCanvas, options).then(
+                            resolve,
+
+                            function failure(error) {
+                                error = new Error(error.message || "Problem generating thumbnail");
+                                error.error = error.message;
+                                error.container = error.container;
+                                reject(error);
+                            }
+                        );
+                    }
                 }
                 else {
-                    this._imageGenerator.generate(fileOrUrl, imgOrCanvas, options).then(
-                        function success(modifiedContainer) {
-                            promiseToReturn.success(modifiedContainer);
-                        },
-
-                        function failure(error) {
-                            promiseToReturn.failure({container: error.container, error: error.message || "Problem generating thumbnail"});
-                        }
-                    );
+                    error = new Error("Missing image generator module");
+                    error.error = error.message;
+                    error.container = imgOrCanvas;
+                    reject(error);
                 }
-            }
-            else {
-                promiseToReturn.failure({container: imgOrCanvas, error: "Missing image generator module"});
-            }
-
-            return promiseToReturn;
+            });
         },
 
         getButton: function(fileId) {
