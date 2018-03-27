@@ -40,14 +40,18 @@ if (qqtest.canDownloadFileAsBlob) {
                 qqtest.downloadFileAsBlob("up.jpg", "image/jpeg").then(function (blob) {
                     fileTestHelper.mockXhr();
                     uploader.addFiles(blob);
-                    !autoUpload && uploader.uploadStoredFiles();
+                    setTimeout(function () {
+                        !autoUpload && uploader.uploadStoredFiles();
 
-                    if (success) {
-                        fileTestHelper.getRequests()[0].respond(200, null, JSON.stringify({success: true}));
-                    }
-                    else {
-                        fileTestHelper.getRequests()[0].respond(400, null, null);
-                    }
+                        setTimeout(function () {
+                            if (success) {
+                                fileTestHelper.getRequests()[0].respond(200, null, JSON.stringify({success: true}));
+                            }
+                            else {
+                                fileTestHelper.getRequests()[0].respond(400, null, null);
+                            }
+                        }, 0);
+                    }, 0);
                 });
             },
             runMultipleUploadTest = function(success, done) {

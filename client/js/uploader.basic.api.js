@@ -807,7 +807,7 @@
                             return onUploadResult;
                         }
 
-                        return new qq.Promise().success();
+                        return Promise.resolve();
                     },
                     onUploadChunk: function(id, name, chunkData) {
                         self._onUploadChunk(id, chunkData);

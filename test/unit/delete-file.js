@@ -165,9 +165,11 @@ if (qqtest.canDownloadFileAsBlob) {
 
                 uploader.addFiles({name: "test", blob: blob});
 
-                assert.equal(fileTestHelper.getRequests().length, 1, "Wrong # of requests");
-                request = fileTestHelper.getRequests()[0];
-                request.respond(200, null, JSON.stringify({success: true}));
+                setTimeout(function () {
+                    assert.equal(fileTestHelper.getRequests().length, 1, "Wrong # of requests");
+                    request = fileTestHelper.getRequests()[0];
+                    request.respond(200, null, JSON.stringify({success: true}));
+                }, 0);
             });
         }
 

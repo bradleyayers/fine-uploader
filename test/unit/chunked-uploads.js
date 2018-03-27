@@ -495,7 +495,9 @@ if (qqtest.canDownloadFileAsBlob) {
                 qqtest.downloadFileAsBlob("up.jpg", "image/jpeg").then(function (blob) {
                     fileTestHelper.mockXhr();
                     uploader.addFiles({name: "test", blob: blob});
-                    fileTestHelper.getRequests()[0].respond(200, null, JSON.stringify({success: true}));
+                    setTimeout(function() {
+                        fileTestHelper.getRequests()[0].respond(200, null, JSON.stringify({success: true}));
+                    }, 0);
                 });
             }
 
@@ -724,14 +726,16 @@ if (qqtest.canDownloadFileAsBlob) {
                     fileTestHelper.mockXhr();
                     uploader.addFiles({name: "test", blob: blob});
 
-                    if (sinonResponse) {
-                        var request = fileTestHelper.getRequests()[0];
+                    setTimeout(function() {
+                        if (sinonResponse) {
+                            var request = fileTestHelper.getRequests()[0];
 
-                        request.respond.apply(request, sinonResponse);
-                    }
-                    else {
-                        fileTestHelper.getRequests()[0].respond(200, null, JSON.stringify({success: true}));
-                    }
+                            request.respond.apply(request, sinonResponse);
+                        }
+                        else {
+                            fileTestHelper.getRequests()[0].respond(200, null, JSON.stringify({success: true}));
+                        }
+                    }, 0);
                 });
             }
 
