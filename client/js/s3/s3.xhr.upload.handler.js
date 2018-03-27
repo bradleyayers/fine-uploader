@@ -39,14 +39,12 @@ qq.s3.XhrUploadHandler = function(spec, proxy) {
 
                 return new Promise(function(resolve, reject) {
                     requesters.completeMultipart.send(id, uploadId, etagMap).then(
-                        function(response, xhr) {
-                            resolve({response: response, xhr: xhr});
-                        },
+                        resolve,
 
-                        function failure(reason, xhr) {
-                            var error = new Error(reason);
-                            error.xhr = xhr;
-                            error.response = upload.done(id, xhr).response;
+                        function failure(err) {
+                            var error = new Error(err.message);
+                            error.xhr = err.xhr;
+                            error.response = upload.done(id, err.xhr).response;
                             reject(error);
                         }
                     );

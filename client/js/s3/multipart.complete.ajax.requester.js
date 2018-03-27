@@ -80,7 +80,8 @@ qq.s3.CompleteMultipartAjaxRequester = function(o) {
                 bucket = options.getBucket(id),
                 responseDoc = domParser.parseFromString(xhr.responseText, "application/xml"),
                 bucketEls = responseDoc.getElementsByTagName("Bucket"),
-                keyEls = responseDoc.getElementsByTagName("Key");
+                keyEls = responseDoc.getElementsByTagName("Key"),
+                error;
 
             delete pendingCompleteRequests[id];
 
@@ -107,10 +108,12 @@ qq.s3.CompleteMultipartAjaxRequester = function(o) {
             }
 
             if (isError) {
-                promise.failure("Problem combining the file parts!", xhr);
+                error = new Error("Problem combining the file parts!");
+                error.xhr = xhr;
+                promise.reject(error);
             }
             else {
-                promise.success({}, xhr);
+                promise.resolve({response: {}, xhr: xhr});
             }
         });
     }
@@ -163,31 +166,30 @@ qq.s3.CompleteMultipartAjaxRequester = function(o) {
 
     qq.extend(this, {
         /**
-         * Sends the "Complete" request and fulfills the returned promise when the success of this request is known.
+         * Sends the "Complete" request and resolved the returned promise when the success of this request is known.
          *
          * @param id ID associated with the file.
          * @param uploadId AWS uploadId for this file
          * @param etagEntries Array of objects containing `etag` values and their associated `part` numbers.
-         * @returns {qq.Promise}
+         * @returns {Promise}
          */
         send: function(id, uploadId, etagEntries) {
-            var promise = new qq.Promise(),
-                body = getCompleteRequestBody(etagEntries);
+            var body = getCompleteRequestBody(etagEntries);
 
-            getHeaders(id, uploadId, body).then(function(info) {
+            return getHeaders(id, uploadId, body).then(function(info) {
                 options.log("Submitting S3 complete multipart upload request for " + id);
 
-                pendingCompleteRequests[id] = promise;
-                delete info.headers["Content-Type"];
+                return new Promise(function(resolve, reject) {
+                    pendingCompleteRequests[id] = {resolve: resolve, reject: reject};
+                    delete info.headers["Content-Type"];
 
-                requester.initTransport(id)
-                    .withPath(info.endOfUrl)
-                    .withHeaders(info.headers)
-                    .withPayload(body)
-                    .send();
-            }, promise.failure);
-
-            return promise;
+                    requester.initTransport(id)
+                        .withPath(info.endOfUrl)
+                        .withHeaders(info.headers)
+                        .withPayload(body)
+                        .send();
+                });
+            });
         }
     });
 };
