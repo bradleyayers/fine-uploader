@@ -147,9 +147,7 @@ if (qqtest.canDownloadFileAsBlob) {
                         chunking: typicalChunkingOption,
                         objectProperties: {
                             bucket: function() {
-                                var promise = new qq.Promise();
-                                promise.success("mybucket");
-                                return promise;
+                                return Promise.resolve("mybucket");
                             }
                         }
                     }

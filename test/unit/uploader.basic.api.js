@@ -253,32 +253,6 @@ describe("uploader.basic.api.js", function () {
 
                 runTest(callback, done);
             });
-
-            it("qq.Promise", function(done) {
-                var callback = function() {
-                        var promise = new qq.Promise();
-
-                        setTimeout(function() {
-                            promise.success("foobar");
-                        }, 100);
-
-                        return promise;
-                    };
-
-                runTest(callback, done);
-            });
-
-            it("Q.js", function(done) {
-                var callback = function() {
-                        return Q.Promise(function(resolve) {
-                            setTimeout(function() {
-                                resolve("foobar");
-                            }, 100);
-                        });
-                    };
-
-                runTest(callback, done);
-            });
         });
 
         describe("handles failed promissory callbacks", function() {
@@ -303,32 +277,6 @@ describe("uploader.basic.api.js", function () {
                         setTimeout(function() {
                             reject();
                         }, 100);    
-                    });
-                };
-
-                runTest(callback, done);
-            });
-
-            it("qq.Promise", function(done) {
-                var callback = function() {
-                        var promise = new qq.Promise();
-
-                        setTimeout(function() {
-                            promise.failure();
-                        }, 100);
-
-                        return promise;
-                    };
-
-                runTest(callback, done);
-            });
-
-            it("Q.js", function(done) {
-                var callback = function() {
-                    return Q.Promise(function (resolve, reject) {
-                        setTimeout(function () {
-                            reject();
-                        }, 100);
                     });
                 };
 

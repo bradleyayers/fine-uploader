@@ -136,7 +136,7 @@ if (qqtest.canDownloadFileAsBlob) {
         });
 
         describe("file rejection via callback", function() {
-            function setupUploader(callback, blob, done, useQ) {
+            function setupUploader(callback, blob, done) {
                 var uploader = new qq.FineUploaderBasic({
                     autoUpload: false,
                     callbacks: (function() {
@@ -145,20 +145,11 @@ if (qqtest.canDownloadFileAsBlob) {
 
                         if (done) {
                             callbacks[callbackName] = function() {
-                                if (useQ) {
-                                    return Q.Promise(function(resolve, reject) {
-                                        setTimeout(function() {
-                                            reject();
-                                        },100);
-                                    });
-                                }
-                                else {
-                                    var promise = new qq.Promise();
+                                return new Promise(function(resolve, reject) {
                                     setTimeout(function() {
-                                        promise.failure();
-                                    },100);
-                                    return promise;
-                                }
+                                        reject();
+                                    }, 100);
+                                });
                             };
 
                             callbacks.onStatusChange = function(id, oldStatus, newStatus) {
@@ -221,12 +212,6 @@ if (qqtest.canDownloadFileAsBlob) {
                 });
             });
 
-            it("Q.js: Ignores a submitted file that is rejected by returning a promise and failing it in a validate callback", function(done) {
-                qqtest.downloadFileAsBlob(testImgKey, testImgType).then(function(blob) {
-                    setupUploader("validate", blob, done, true);
-                });
-            });
-
             it("Ignores a submitted file that is rejected by returning false in a validateBatch callback", function(done) {
                 qqtest.downloadFileAsBlob(testImgKey, testImgType).then(function(blob) {
                     var uploader = setupUploader("validateBatch", blob);
@@ -241,12 +226,6 @@ if (qqtest.canDownloadFileAsBlob) {
             it("Ignores a submitted file that is rejected by returning a promise and failing it in a validateBatch callback", function(done) {
                 qqtest.downloadFileAsBlob(testImgKey, testImgType).then(function(blob) {
                     setupUploader("validateBatch", blob, done);
-                });
-            });
-
-            it("Q.js: Ignores a submitted file that is rejected by returning a promise and failing it in a validateBatch callback", function(done) {
-                qqtest.downloadFileAsBlob(testImgKey, testImgType).then(function(blob) {
-                    setupUploader("validateBatch", blob, done, true);
                 });
             });
         });

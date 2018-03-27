@@ -61,18 +61,16 @@ for your prompt dialog, might look something like this:
 
 ```javascript
 showPrompt: function(message, defaultValue) {
-    var promise = new qq.Promise();
-
-    bootbox.prompt("Enter a value", "Cancel", "Confirm", function(result) {
-        if (result === null || qq.trimStr(result).length === 0) {
-            promise.failure("User canceled prompt dialog or entered an empty string.");
-        }
-        else {
-            promise.success(result);
-        }
-    }, defaultValue);
-
-    return promise;
+    return new Promise(function(resolve, reject) {
+        bootbox.prompt("Enter a value", "Cancel", "Confirm", function(result) {
+            if (result === null || qq.trimStr(result).length === 0) {
+                reject(new Error("User canceled prompt dialog or entered an empty string."));
+            }
+            else {
+                resolve(result);
+            }
+        }, defaultValue);
+    });
 }
 ```
 

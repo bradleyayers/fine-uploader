@@ -460,23 +460,6 @@ if (qqtest.canDownloadFileAsBlob) {
 
                 runTest(keyFunc, done);
             });
-
-            it("qq.Promise", function(done) {
-                var keyFunc = function(id) {
-                    return new qq.Promise().success(customKeyPrefix + this.getName(id));
-                };
-
-                runTest(keyFunc, done);
-            });
-
-            it("Q.js", function(done) {
-                var keyFunc = function(id) {
-                    /* jshint newcap:false */
-                    return Q(customKeyPrefix + this.getName(id));
-                };
-
-                runTest(keyFunc, done);
-            });
         });
 
         describe("respects the objectProperties.key option w/ a custom key generation function that returns a failed promise (no reason)", function() {
@@ -502,22 +485,6 @@ if (qqtest.canDownloadFileAsBlob) {
             it("Promise", function(done) {
                 var keyFunc = function() {
                     return Promise.reject();
-                };
-
-                runTest(keyFunc, done);
-            });
-
-            it("qq.Promise", function(done) {
-                var keyFunc = function() {
-                    return new qq.Promise().failure();
-                };
-
-                runTest(keyFunc, done);
-            });
-
-            it("Q.js", function(done) {
-                var keyFunc = function() {
-                    return Q.reject();
                 };
 
                 runTest(keyFunc, done);
@@ -552,22 +519,6 @@ if (qqtest.canDownloadFileAsBlob) {
             it("Promise", function(done) {
                 var keyFunc = function() {
                     return Promise.reject("oops");
-                };
-
-                runTest(keyFunc, done);
-            });
-
-            it("qq.Promise", function(done) {
-                var keyFunc = function() {
-                    return new qq.Promise().failure("oops");
-                };
-
-                runTest(keyFunc, done);
-            });
-
-            it("Q.js", function(done) {
-                var keyFunc = function() {
-                    return Q.reject("oops");
                 };
 
                 runTest(keyFunc, done);
