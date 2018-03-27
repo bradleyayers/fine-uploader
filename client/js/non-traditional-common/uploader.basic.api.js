@@ -74,8 +74,9 @@
                                     },
                                     // If the upload success request fails, attempt to re-send the success request (via the core retry code).
                                     // The entire upload may be restarted if the server returns a "reset" property with a value of true as well.
-                                    function(successRequestResult) {
-                                        var callback = submitSuccessRequest,
+                                    function(err) {
+                                        var successRequestResult = err.response,
+                                            callback = submitSuccessRequest,
                                             error;
 
                                         qq.extend(result, successRequestResult);

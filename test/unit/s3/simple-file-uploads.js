@@ -735,9 +735,11 @@ if (qqtest.canDownloadFileAsBlob) {
                             assert.equal(uploadSuccessRequestParsedBody.etag, "123");
 
                             uploadSuccessRequest.respond(200, null, null);
-                            assert.equal(uploader.getUploads()[0].status, qq.status.UPLOAD_SUCCESSFUL);
+                            setTimeout(function () {
+                                assert.equal(uploader.getUploads()[0].status, qq.status.UPLOAD_SUCCESSFUL);
 
-                            done();
+                                done();
+                            }, 0);
                         });
                     }, 0);
                 }, 0);
@@ -796,9 +798,11 @@ if (qqtest.canDownloadFileAsBlob) {
                     uploadSuccessRequest = fileTestHelper.getRequests()[2];
                     assert.equal(uploadSuccessRequest.method, "PUT");
                     uploadSuccessRequest.respond(200, null, null);
-                    assert.equal(uploader.getUploads()[0].status, qq.status.UPLOAD_SUCCESSFUL);
+                    setTimeout(function() {
+                        assert.equal(uploader.getUploads()[0].status, qq.status.UPLOAD_SUCCESSFUL);
 
-                    done();
+                        done();
+                    }, 0);
                 }, 0);
             });
         });
