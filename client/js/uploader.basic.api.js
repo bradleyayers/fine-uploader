@@ -789,23 +789,21 @@
                         }
                     },
                     onCancel: function(id, name, cancelFinalizationEffort) {
-                        var promise = new qq.Promise();
+                        return new Promise(function(resolve, reject) {
+                            self._handleCheckedCallback({
+                                name: "onCancel",
+                                callback: qq.bind(self._options.callbacks.onCancel, self, id, name),
+                                onFailure: reject,
+                                onSuccess: function() {
+                                    cancelFinalizationEffort.then(function() {
+                                        self._onCancel(id, name);
+                                    });
 
-                        self._handleCheckedCallback({
-                            name: "onCancel",
-                            callback: qq.bind(self._options.callbacks.onCancel, self, id, name),
-                            onFailure: promise.failure,
-                            onSuccess: function() {
-                                cancelFinalizationEffort.then(function() {
-                                    self._onCancel(id, name);
-                                });
-
-                                promise.success();
-                            },
-                            identifier: id
+                                    resolve();
+                                },
+                                identifier: id
+                            });
                         });
-
-                        return promise;
                     },
                     onUploadPrep: qq.bind(this._onUploadPrep, this),
                     onUpload: function(id, name) {
