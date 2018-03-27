@@ -83,13 +83,7 @@ qq.s3.InitiateMultipartAjaxRequester = function(o) {
                 .withHeaders(headers);
 
             // Ask the local server to sign the request.  Use this signature to form the Authorization header.
-            return new Promise(function(resolve, reject) {
-                getSignatureAjaxRequester.getSignature(id, {signatureConstructor: signatureConstructor}).then(function (headers, endOfUrl) {
-                    resolve({headers: headers, endOfUrl: endOfUrl});
-                }, function(errorReason) {
-                    reject(new Error(errorReason));
-                });
-            });
+            return getSignatureAjaxRequester.getSignature(id, {signatureConstructor: signatureConstructor});
         });
     }
 

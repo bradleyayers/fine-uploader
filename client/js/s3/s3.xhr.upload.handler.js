@@ -80,25 +80,18 @@ qq.s3.XhrUploadHandler = function(spec, proxy) {
              * @returns {Promise}
              */
             initHeaders: function(id, chunkIdx, blob) {
-                return new Promise(function(resolve, reject) {
-                    upload.key.urlSafe(id).then(function(key) {
-                        var headers = {},
-                            bucket = upload.bucket.getName(id),
-                            host = upload.host.getName(id),
-                            signatureConstructor = requesters.restSignature.constructStringToSign
-                                (requesters.restSignature.REQUEST_TYPE.MULTIPART_UPLOAD, bucket, host, key)
-                                .withPartNum(chunkIdx + 1)
-                                .withContent(blob)
-                                .withUploadId(handler._getPersistableData(id).uploadId);
+                return upload.key.urlSafe(id).then(function(key) {
+                    var headers = {},
+                        bucket = upload.bucket.getName(id),
+                        host = upload.host.getName(id),
+                        signatureConstructor = requesters.restSignature.constructStringToSign
+                            (requesters.restSignature.REQUEST_TYPE.MULTIPART_UPLOAD, bucket, host, key)
+                            .withPartNum(chunkIdx + 1)
+                            .withContent(blob)
+                            .withUploadId(handler._getPersistableData(id).uploadId);
 
-                        // Ask the local server to sign the request.  Use this signature to form the Authorization header.
-                        requesters.restSignature.getSignature(id + "." + chunkIdx, {signatureConstructor: signatureConstructor}).then(
-                            function (headers, endOfUrl) {
-                                resolve({headers: headers, endOfUrl: endOfUrl});
-                            }, function() {
-                                reject();
-                            });
-                    });
+                    // Ask the local server to sign the request.  Use this signature to form the Authorization header.
+                    return requesters.restSignature.getSignature(id + "." + chunkIdx, {signatureConstructor: signatureConstructor});
                 });
             },
 

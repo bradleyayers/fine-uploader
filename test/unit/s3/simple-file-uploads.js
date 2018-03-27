@@ -453,6 +453,14 @@ if (qqtest.canDownloadFileAsBlob) {
                 });
             }
 
+            it("Promise", function(done) {
+                var keyFunc = function(id) {
+                    return Promise.resolve(customKeyPrefix + this.getName(id));
+                };
+
+                runTest(keyFunc, done);
+            });
+
             it("qq.Promise", function(done) {
                 var keyFunc = function(id) {
                     return new qq.Promise().success(customKeyPrefix + this.getName(id));
@@ -490,6 +498,14 @@ if (qqtest.canDownloadFileAsBlob) {
                     done();
                 });
             }
+
+            it("Promise", function(done) {
+                var keyFunc = function() {
+                    return Promise.reject();
+                };
+
+                runTest(keyFunc, done);
+            });
 
             it("qq.Promise", function(done) {
                 var keyFunc = function() {
@@ -533,6 +549,14 @@ if (qqtest.canDownloadFileAsBlob) {
                 });
             }
 
+            it("Promise", function(done) {
+                var keyFunc = function() {
+                    return Promise.reject("oops");
+                };
+
+                runTest(keyFunc, done);
+            });
+
             it("qq.Promise", function(done) {
                 var keyFunc = function() {
                     return new qq.Promise().failure("oops");
@@ -541,7 +565,7 @@ if (qqtest.canDownloadFileAsBlob) {
                 runTest(keyFunc, done);
             });
 
-            it("qq.Promise", function(done) {
+            it("Q.js", function(done) {
                 var keyFunc = function() {
                     return Q.reject("oops");
                 };

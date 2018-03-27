@@ -245,6 +245,21 @@ describe("S3 serverless upload tests", function() {
                     });
                 }
 
+                it("Promise", function(done) {
+                    var callback = function() {
+                        assert.ok(true);
+
+                        return Promise.resolve({
+                            accessKey: testAccessKeyFromCallback,
+                            secretKey: testSecretKey,
+                            expiration: new Date(Date.now() + 10000),
+                            sessionToken: testSessionTokenFromCallback
+                        });
+                    };
+
+                    runTest(callback, done);
+                });
+
                 it("qq.Promise", function(done) {
                     var callback = function() {
                         assert.ok(true);

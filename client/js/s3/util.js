@@ -317,30 +317,30 @@ qq.s3.util = qq.s3.util || (function() {
                 // Invoke a promissory callback that should provide us with a base64-encoded policy doc and an
                 // HMAC signature for the policy doc.
                 signPolicyCallback(policyJson).then(
-                    function(policyAndSignature, updatedAccessKey, updatedSessionToken) {
-                        awsParams.policy = policyAndSignature.policy;
+                    function(info) {
+                        awsParams.policy = info.policyAndSignature.policy;
 
                         if (spec.signatureVersion === 2) {
-                            awsParams.signature = policyAndSignature.signature;
+                            awsParams.signature = info.policyAndSignature.signature;
 
-                            if (updatedAccessKey) {
-                                awsParams.AWSAccessKeyId = updatedAccessKey;
+                            if (info.updatedAccessKey) {
+                                awsParams.AWSAccessKeyId = info.updatedAccessKey;
                             }
                         }
                         else if (spec.signatureVersion === 4) {
-                            awsParams[qq.s3.util.V4_SIGNATURE_PARAM_NAME] = policyAndSignature.signature;
+                            awsParams[qq.s3.util.V4_SIGNATURE_PARAM_NAME] = info.policyAndSignature.signature;
                         }
 
-                        if (updatedSessionToken) {
-                            awsParams[qq.s3.util.SESSION_TOKEN_PARAM_NAME] = updatedSessionToken;
+                        if (info.updatedSessionToken) {
+                            awsParams[qq.s3.util.SESSION_TOKEN_PARAM_NAME] = info.updatedSessionToken;
                         }
 
                         resolve(awsParams);
                     },
-                    function(errorMessage) {
-                        var error = new Error(errorMessage || "Can't continue further with request to S3 as we did not receive " +
-                                                              "a valid signature and policy from the server.");
-                        error.error = errorMessage;
+                    function(err) {
+                        var error = new Error(err.message || "Can't continue further with request to S3 as we did not receive " +
+                                                               "a valid signature and policy from the server.");
+                        error.error = err.error;
                         log("Policy signing failed.  " + error.message, "error");
                         reject(error);
                     }

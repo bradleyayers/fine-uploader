@@ -135,6 +135,21 @@ if (qqtest.canDownloadFileAsBlob) {
                 });
             }
 
+            it("Promise", function(done) {
+                var uploader = new qq.azure.FineUploaderBasic({
+                        request: {endpoint: testEndpoint},
+                        signature: {endpoint: testSignatureEndoint},
+                        blobProperties: {
+                            name: function(id) {
+                                return Promise.resolve(id + "_blobname");
+                            }
+                        }
+                    }
+                );
+
+                runTest(uploader, done);
+            });
+
             it("qq.Promise", function(done) {
                 var uploader = new qq.azure.FineUploaderBasic({
                         request: {endpoint: testEndpoint},

@@ -418,7 +418,7 @@ qq.UploadHandlerController = function(o, namespace) {
                     var optXhr = error.xhr;
                     log("Simple upload request failed for " + id);
 
-                    var responseToReport = upload.normalizeResponse({error: error.error, azureError: error.azureError}, false);
+                    var responseToReport = upload.normalizeResponse({error: error.error || error.message, azureError: error.azureError}, false);
 
                     if (!options.onAutoRetry(id, name, responseToReport, optXhr)) {
                         upload.cleanup(id, responseToReport, optXhr);
