@@ -267,7 +267,9 @@ if (qqtest.canDownloadFileAsBlob) {
                 uploader.addFiles([blob, blob]);
 
                 setTimeout(function() {
-                    assert.deepEqual(callbackOrder, ["submit", "submit"]);
+                    setTimeout(function() {
+                        assert.deepEqual(callbackOrder, ["submit", "submit"]);
+                    }, 0);
                 }, 0);
             });
         });

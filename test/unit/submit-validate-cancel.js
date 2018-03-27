@@ -189,10 +189,12 @@ if (qqtest.canDownloadFileAsBlob) {
                 qqtest.downloadFileAsBlob(testImgKey, testImgType).then(function(blob) {
                     var uploader = setupUploader("submit", blob);
 
-                    assert.equal(uploader.getUploads().length, 1, "Wrong number of uploads");
-                    assert.equal(uploader.getUploads({id: 0}).status, qq.status.REJECTED, "Wrong status");
+                    setTimeout(function() {
+                        assert.equal(uploader.getUploads().length, 1, "Wrong number of uploads");
+                        assert.equal(uploader.getUploads({id: 0}).status, qq.status.REJECTED, "Wrong status");
 
-                    done();
+                        done();
+                    }, 0);
                 });
             });
 

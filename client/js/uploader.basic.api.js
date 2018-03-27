@@ -1895,7 +1895,7 @@
          *
          * @param fileWrapper Wrapper containing a `file` along with an `id`
          * @param validationDescriptor Normalized information about the item (`size`, `name`).
-         * @returns qq.Promise with appropriate callbacks invoked depending on the validity of the file
+         * @returns {Promise} with appropriate callbacks invoked depending on the validity of the file
          * @private
          */
         _validateFileOrBlobData: function(fileWrapper, validationDescriptor) {
@@ -1910,47 +1910,39 @@
                 size = validationDescriptor.size,
                 buttonId = this._getButtonId(fileWrapper.file),
                 validationBase = this._getValidationBase(buttonId),
-                validityChecker = new qq.Promise();
+                validityChecker;
 
-            validityChecker.then(
-                function() {},
-                function() {
-                    self._fileOrBlobRejected(fileWrapper.id, name);
-                });
+            validityChecker = new Promise(function(resolve, reject) {
+                if (qq.isFileOrInput(file) && !self._isAllowedExtension(validationBase.allowedExtensions, name)) {
+                    self._itemError("typeError", name, file);
+                    reject();
+                } else if (!self._options.validation.allowEmpty && size === 0) {
+                    self._itemError("emptyError", name, file);
+                    reject();
+                } else if (size > 0 && validationBase.sizeLimit && size > validationBase.sizeLimit) {
+                    self._itemError("sizeError", name, file);
+                    reject();
+                } else if (size > 0 && size < validationBase.minSizeLimit) {
+                    self._itemError("minSizeError", name, file);
+                    reject();
+                } else if (qq.ImageValidation && qq.supportedFeatures.imagePreviews && qq.isFile(file)) {
+                    new qq.ImageValidation(file, qq.bind(self.log, self)).validate(validationBase.image).then(
+                        resolve,
+                        function(error) {
+                            var errorCode = error.failingLimit;
+                            self._itemError(errorCode + "ImageError", name, file);
+                            reject();
+                        }
+                    );
+                }
+                else {
+                    resolve();
+                }
+            });
 
-            if (qq.isFileOrInput(file) && !this._isAllowedExtension(validationBase.allowedExtensions, name)) {
-                this._itemError("typeError", name, file);
-                return validityChecker.failure();
-            }
-
-            if (!this._options.validation.allowEmpty && size === 0) {
-                this._itemError("emptyError", name, file);
-                return validityChecker.failure();
-            }
-
-            if (size > 0 && validationBase.sizeLimit && size > validationBase.sizeLimit) {
-                this._itemError("sizeError", name, file);
-                return validityChecker.failure();
-            }
-
-            if (size > 0 && size < validationBase.minSizeLimit) {
-                this._itemError("minSizeError", name, file);
-                return validityChecker.failure();
-            }
-
-            if (qq.ImageValidation && qq.supportedFeatures.imagePreviews && qq.isFile(file)) {
-                new qq.ImageValidation(file, qq.bind(self.log, self)).validate(validationBase.image).then(
-                    validityChecker.success,
-                    function(error) {
-                        var errorCode = error.failingLimit;
-                        self._itemError(errorCode + "ImageError", name, file);
-                        validityChecker.failure();
-                    }
-                );
-            }
-            else {
-                validityChecker.success();
-            }
+            validityChecker.catch(function() {
+                self._fileOrBlobRejected(fileWrapper.id, name);
+            });
 
             return validityChecker;
         },
