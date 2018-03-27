@@ -228,9 +228,9 @@ qq.s3.FormUploadHandler = function(options, proxy) {
                             error.error = errorReason;
                             reject(error);
                         });
-                    }, function(errorReason) {
+                    }, function(err) {
                         var error = new Error("Failed to get key name");
-                        error.error = errorReason;
+                        error.error = err.message;
                         reject(error);
                     });
                 }

@@ -332,43 +332,46 @@
          *
          * @param id ID of the file
          * @param filename Name of the file
-         * @returns {qq.Promise} A promise that will be fulfilled when the key name has been determined (and will be passed to the caller via the success callback).
+         * @returns {Promise} A promise that will be resolved with the key name when it has been determined.
          * @private
          */
         _determineKeyName: function(id, filename) {
-            /*jshint -W015*/
-            var promise = new qq.Promise(),
-                keynameLogic = this._options.objectProperties.key,
-                extension = qq.getExtension(filename),
-                onGetKeynameFailure = promise.failure,
-                onGetKeynameSuccess = function(keyname, extension) {
-                    var keynameToUse = keyname;
+            var self = this;
 
-                    if (extension !== undefined) {
-                        keynameToUse += "." + extension;
-                    }
+            return new Promise(function(resolve, reject) {
+                /*jshint -W015*/
+                var keynameLogic = self._options.objectProperties.key,
+                    extension = qq.getExtension(filename),
+                    onGetKeynameFailure = function(reason) {
+                        reject(new Error(reason));
+                    },
+                    onGetKeynameSuccess = function(keyname, extension) {
+                        var keynameToUse = keyname;
 
-                    promise.success(keynameToUse);
-                };
+                        if (extension !== undefined) {
+                            keynameToUse += "." + extension;
+                        }
 
-            switch (keynameLogic) {
-                case "uuid":
-                    onGetKeynameSuccess(this.getUuid(id), extension);
-                    break;
-                case "filename":
-                    onGetKeynameSuccess(filename);
-                    break;
-                default:
-                    if (qq.isFunction(keynameLogic)) {
-                        this._handleKeynameFunction(keynameLogic, id, onGetKeynameSuccess, onGetKeynameFailure);
-                    }
-                    else {
-                        this.log(keynameLogic + " is not a valid value for the s3.keyname option!", "error");
-                        onGetKeynameFailure();
-                    }
-            }
+                        resolve(keynameToUse);
+                    };
 
-            return promise;
+                switch (keynameLogic) {
+                    case "uuid":
+                        onGetKeynameSuccess(self.getUuid(id), extension);
+                        break;
+                    case "filename":
+                        onGetKeynameSuccess(filename);
+                        break;
+                    default:
+                        if (qq.isFunction(keynameLogic)) {
+                            self._handleKeynameFunction(keynameLogic, id, onGetKeynameSuccess, onGetKeynameFailure);
+                        }
+                        else {
+                            self.log(keynameLogic + " is not a valid value for the s3.keyname option!", "error");
+                            onGetKeynameFailure();
+                        }
+                }
+            });
         },
 
         /**

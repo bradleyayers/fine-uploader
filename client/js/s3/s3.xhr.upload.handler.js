@@ -447,13 +447,11 @@ qq.s3.XhrUploadHandler = function(spec, proxy) {
                     if (key == null) {
                         key = new Promise(function(resolve, reject) {
                             onGetKeyName(id, getName(id)).then(
-                                function(keyName) {
-                                    resolve(keyName);
-                                },
-                                function(errorReason) {
+                                resolve,
+                                function(err) {
                                     handler._setThirdPartyFileId(id, null);
-                                    var error = new Error(errorReason);
-                                    error.error = errorReason;
+                                    var error = new Error(err.message);
+                                    error.error = err.message;
                                     reject(error);
                                 }
                             );
