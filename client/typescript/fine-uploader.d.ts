@@ -3228,23 +3228,23 @@ declare module "fine-uploader/lib/s3" {
         }
 
         export import FineUploaderBasic = s3Core.FineUploaderBasic;
-        export type S3ChunkingOptions = s3Core.S3ChunkingOptions;
-        export type S3CredentialsOptions = s3Core.S3CredentialsOptions;
-        export type S3CorsOptions = s3Core.S3CorsOptions;
-        export type S3iFrameSupportOptions = s3Core.S3iFrameSupportOptions;
-        export type BucketFunction = s3Core.BucketFunction;
-        export type HostFunction = s3Core.HostFunction;
-        export type KeyFunction = s3Core.KeyFunction;
-        export type S3ObjectPropertyOptions = s3Core.S3ObjectPropertyOptions;
-        export type S3RequestOptions = s3Core.S3RequestOptions;
-        export type S3CustomHeaderFunction = s3Core.S3CustomHeaderFunction;
-        export type S3SignatureOptions = s3Core.S3SignatureOptions;
-        export type S3UploadSuccessOptions = s3Core.S3UploadSuccessOptions;
-        export type S3CoreOptions = s3Core.S3CoreOptions;
-        export type S3FailedUploadTextDisplayOptions = s3Core.S3FailedUploadTextDisplayOptions;
-        export type OnCredentialsExpired = s3Core.OnCredentialsExpired;
-        export type S3Events = s3Core.S3Events;
-        export type S3ResumableFileObject = s3Core.S3ResumableFileObject;
+        export import S3ChunkingOptions = s3Core.S3ChunkingOptions;
+        export import S3CredentialsOptions = s3Core.S3CredentialsOptions;
+        export import S3CorsOptions = s3Core.S3CorsOptions;
+        export import S3iFrameSupportOptions = s3Core.S3iFrameSupportOptions;
+        export import BucketFunction = s3Core.BucketFunction;
+        export import HostFunction = s3Core.HostFunction;
+        export import KeyFunction = s3Core.KeyFunction;
+        export import S3ObjectPropertyOptions = s3Core.S3ObjectPropertyOptions;
+        export import S3RequestOptions = s3Core.S3RequestOptions;
+        export import S3CustomHeaderFunction = s3Core.S3CustomHeaderFunction;
+        export import S3SignatureOptions = s3Core.S3SignatureOptions;
+        export import S3UploadSuccessOptions = s3Core.S3UploadSuccessOptions;
+        export import S3CoreOptions = s3Core.S3CoreOptions;
+        export import S3FailedUploadTextDisplayOptions = s3Core.S3FailedUploadTextDisplayOptions;
+        export import OnCredentialsExpired = s3Core.OnCredentialsExpired;
+        export import S3Events = s3Core.S3Events;
+        export import S3ResumableFileObject = s3Core.S3ResumableFileObject;
 
     }
 
