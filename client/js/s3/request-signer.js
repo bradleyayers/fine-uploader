@@ -503,7 +503,7 @@ qq.s3.RequestSigner = function(o) {
                             signatureEffort,
                             credentialsProvider.get().accessKey,
                             credentialsProvider.get().sessionToken);
-                    }, function(errorMsg) {
+                    }, function() {
                         options.log("Attempt to update expired credentials apparently failed! Unable to sign request.  ", "error");
                         signatureEffort.failure("Unable to sign request - expired credentials.");
                     });

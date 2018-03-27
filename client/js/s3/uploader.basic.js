@@ -255,30 +255,29 @@
                 },
 
                 onExpired: function() {
-                    var updateCredentials = new qq.Promise(),
-                        callbackRetVal = self._options.callbacks.onCredentialsExpired();
+                    var callbackRetVal = self._options.callbacks.onCredentialsExpired();
 
-                    if (qq.isGenericPromise(callbackRetVal)) {
-                        callbackRetVal.then(function(credentials) {
-                            try {
-                                self.setCredentials(credentials);
-                                updateCredentials.success();
-                            }
-                            catch (error) {
-                                self.log("Invalid credentials returned from onCredentialsExpired callback! (" + error.message + ")", "error");
-                                updateCredentials.failure("onCredentialsExpired did not return valid credentials.");
-                            }
-                        }, function(errorMsg) {
-                            self.log("onCredentialsExpired callback indicated failure! (" + errorMsg + ")", "error");
-                            updateCredentials.failure("onCredentialsExpired callback failed.");
-                        });
-                    }
-                    else {
-                        self.log("onCredentialsExpired callback did not return a promise!", "error");
-                        updateCredentials.failure("Unexpected return value for onCredentialsExpired.");
-                    }
-
-                    return updateCredentials;
+                    return new Promise(function(resolve, reject) {
+                        if (qq.isGenericPromise(callbackRetVal)) {
+                            callbackRetVal.then(function(credentials) {
+                                try {
+                                    self.setCredentials(credentials);
+                                    resolve();
+                                }
+                                catch (error) {
+                                    self.log("Invalid credentials returned from onCredentialsExpired callback! (" + error.message + ")", "error");
+                                    reject(new Error("onCredentialsExpired did not return valid credentials."));
+                                }
+                            }, function(errorMsg) {
+                                self.log("onCredentialsExpired callback indicated failure! (" + errorMsg + ")", "error");
+                                reject(new Error("onCredentialsExpired callback failed."));
+                            });
+                        }
+                        else {
+                            self.log("onCredentialsExpired callback did not return a promise!", "error");
+                            reject(new Error("Unexpected return value for onCredentialsExpired."));
+                        }
+                    });
                 }
             };
 
