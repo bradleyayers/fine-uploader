@@ -2875,7 +2875,7 @@ declare module "fine-uploader/lib/azure" {
              * * `function`
              *
              * If the value is a function, Fine Uploader Azure will pass the associated file ID as a parameter when invoking your function.
-             * If the value is a function it may return one of a `qq.Promise` or a `String`
+             * If the value is a function it may return one of a `Promise` or a `String`
              *
              * @default `'uuid'`
              */
