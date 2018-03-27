@@ -127,12 +127,14 @@ if (qqtest.canDownloadFileAsBlob) {
                 var deleteFileSignatureRequest;
 
                 uploader.deleteFile(0);
-                deleteFileSignatureRequest = fileTestHelper.getRequests()[2];
-                deleteFileSignatureRequest.respond(500, null, null);
-
                 setTimeout(function() {
-                    assert.equal(fileTestHelper.getRequests().length, 3);
-                    assert.equal(uploader.getUploads()[0].status, qq.status.DELETE_FAILED);
+                    deleteFileSignatureRequest = fileTestHelper.getRequests()[2];
+                    deleteFileSignatureRequest.respond(500, null, null);
+
+                    setTimeout(function() {
+                        assert.equal(fileTestHelper.getRequests().length, 3);
+                        assert.equal(uploader.getUploads()[0].status, qq.status.DELETE_FAILED);
+                    }, 0);
                 }, 0);
             });
         });
