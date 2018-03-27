@@ -1004,44 +1004,43 @@ qq.Templating = function(spec) {
         },
 
         showDialog: function(type, message, defaultValue) {
-            var dialog = getDialog(type),
-                messageEl = getTemplateEl(dialog, selectorClasses.dialogMessage),
-                inputEl = dialog.getElementsByTagName("INPUT")[0],
-                cancelBtn = getTemplateEl(dialog, selectorClasses.dialogCancelButton),
-                okBtn = getTemplateEl(dialog, selectorClasses.dialogOkButton),
-                promise = new qq.Promise(),
+            return new Promise(function(resolve, reject) {
+                var dialog = getDialog(type),
+                    messageEl = getTemplateEl(dialog, selectorClasses.dialogMessage),
+                    inputEl = dialog.getElementsByTagName("INPUT")[0],
+                    cancelBtn = getTemplateEl(dialog, selectorClasses.dialogCancelButton),
+                    okBtn = getTemplateEl(dialog, selectorClasses.dialogOkButton),
 
-                closeHandler = function() {
-                    cancelBtn.removeEventListener("click", cancelClickHandler);
-                    okBtn && okBtn.removeEventListener("click", okClickHandler);
-                    promise.failure();
-                },
+                    closeHandler = function() {
+                        cancelBtn.removeEventListener("click", cancelClickHandler);
+                        okBtn && okBtn.removeEventListener("click", okClickHandler);
+                        reject();
+                    },
 
-                cancelClickHandler = function() {
-                    cancelBtn.removeEventListener("click", cancelClickHandler);
-                    dialog.close();
-                },
+                    cancelClickHandler = function() {
+                        cancelBtn.removeEventListener("click", cancelClickHandler);
+                        dialog.close();
+                    },
 
-                okClickHandler = function() {
-                    dialog.removeEventListener("close", closeHandler);
-                    okBtn.removeEventListener("click", okClickHandler);
-                    dialog.close();
+                    okClickHandler = function() {
+                        dialog.removeEventListener("close", closeHandler);
+                        okBtn.removeEventListener("click", okClickHandler);
+                        dialog.close();
 
-                    promise.success(inputEl && inputEl.value);
-                };
+                        resolve(inputEl && inputEl.value);
+                    };
 
-            dialog.addEventListener("close", closeHandler);
-            cancelBtn.addEventListener("click", cancelClickHandler);
-            okBtn && okBtn.addEventListener("click", okClickHandler);
+                dialog.addEventListener("close", closeHandler);
+                cancelBtn.addEventListener("click", cancelClickHandler);
+                okBtn && okBtn.addEventListener("click", okClickHandler);
 
-            if (inputEl) {
-                inputEl.value = defaultValue;
-            }
-            messageEl.textContent = message;
+                if (inputEl) {
+                    inputEl.value = defaultValue;
+                }
+                messageEl.textContent = message;
 
-            dialog.showModal();
-
-            return promise;
+                dialog.showModal();
+            });
         }
     });
 };

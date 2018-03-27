@@ -61,18 +61,20 @@ if (qqtest.canDownloadFileAsBlob) {
             qqtest.downloadFileAsBlob(testImgKey, testImgType).then(function(blob) {
                 uploader.addFiles({blob: blob, name: expectedName});
 
-                assert.deepEqual(callbackOrder, expectedCallbackOrder);
-                assert.deepEqual(statusChangeOrder, expectedStatusChangeOrder);
-                assert.equal(uploader.getName(0), expectedName);
-                assert.equal(uploader.getNetUploads(), 0);
-                assert.equal(uploader.getSize(0), expectedFileSize);
-                assert.equal(uploader.getUploads().length, 1);
-                assert.equal(uploader.getUploads({id: 0}).name, expectedName);
-                assert.equal(uploader.getUploads({id: 0}).originalName, expectedName);
-                assert.equal(uploader.getUploads({id: 0}).size, expectedFileSize);
-                assert.equal(uploader.getUploads({id: 0}).status, qq.status.SUBMITTED);
+                setTimeout(function() {
+                    assert.deepEqual(callbackOrder, expectedCallbackOrder);
+                    assert.deepEqual(statusChangeOrder, expectedStatusChangeOrder);
+                    assert.equal(uploader.getName(0), expectedName);
+                    assert.equal(uploader.getNetUploads(), 0);
+                    assert.equal(uploader.getSize(0), expectedFileSize);
+                    assert.equal(uploader.getUploads().length, 1);
+                    assert.equal(uploader.getUploads({id: 0}).name, expectedName);
+                    assert.equal(uploader.getUploads({id: 0}).originalName, expectedName);
+                    assert.equal(uploader.getUploads({id: 0}).size, expectedFileSize);
+                    assert.equal(uploader.getUploads({id: 0}).status, qq.status.SUBMITTED);
 
-                done();
+                    done();
+                }, 0);
             });
         });
 
@@ -94,7 +96,10 @@ if (qqtest.canDownloadFileAsBlob) {
                     {blob: blob, name: "name1"},
                     {blob: blob, name: "name2"}
                 ]);
-                done();
+
+                setTimeout(function() {
+                    done();
+                }, 0);
             });
         });
 
