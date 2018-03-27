@@ -258,7 +258,7 @@
                     var callbackRetVal = self._options.callbacks.onCredentialsExpired();
 
                     return new Promise(function(resolve, reject) {
-                        if (qq.isGenericPromise(callbackRetVal)) {
+                        if (callbackRetVal instanceof Promise) {
                             callbackRetVal.then(function(credentials) {
                                 try {
                                     self.setCredentials(credentials);
@@ -292,7 +292,7 @@
             promise = new Promise(function(resolve, reject) {
                 if (qq.isFunction(maybe)) {
                     maybe = maybe(id);
-                    if (qq.isGenericPromise(maybe)) {
+                    if (maybe instanceof Promise) {
                         maybe.then(resolve, reject);
                     }
                     else {
@@ -396,7 +396,7 @@
                 },
                 keyname = keynameFunc.call(this, id);
 
-            if (qq.isGenericPromise(keyname)) {
+            if (keyname instanceof Promise) {
                 keyname.then(onSuccess, onFailure);
             }
             /*jshint -W116*/

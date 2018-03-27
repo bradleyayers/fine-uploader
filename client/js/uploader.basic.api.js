@@ -810,7 +810,7 @@
                         self._onUpload(id, name);
                         var onUploadResult = self._options.callbacks.onUpload(id, name);
 
-                        if (qq.isGenericPromise(onUploadResult)) {
+                        if (onUploadResult instanceof Promise) {
                             self.log(qq.format("onUpload for {} returned a Promise - waiting for resolution.", id));
                             return onUploadResult;
                         }
@@ -821,7 +821,7 @@
                         self._onUploadChunk(id, chunkData);
                         var onUploadChunkResult = self._options.callbacks.onUploadChunk(id, name, chunkData);
 
-                        if (qq.isGenericPromise(onUploadChunkResult)) {
+                        if (onUploadChunkResult instanceof Promise) {
                             self.log(qq.format("onUploadChunk for {}.{} returned a Promise - waiting for resolution.", id, chunkData.partIndex));
                             return onUploadChunkResult;
                         }
@@ -1072,7 +1072,7 @@
             var self = this,
                 callbackRetVal = details.callback();
 
-            if (qq.isGenericPromise(callbackRetVal)) {
+            if (callbackRetVal instanceof Promise) {
                 this.log(details.name + " - waiting for " + details.name + " promise to be fulfilled for " + details.identifier);
                 return callbackRetVal.then(
                     function(successParam) {
