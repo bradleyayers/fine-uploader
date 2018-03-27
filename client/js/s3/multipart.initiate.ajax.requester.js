@@ -40,18 +40,17 @@ qq.s3.InitiateMultipartAjaxRequester = function(o) {
     });
 
     /**
-     * Determine all headers for the "Initiate MPU" request, including the "Authorization" header, which must be determined
-     * by the local server.  This is a promissory function.  If the server responds with a signature, the headers
-     * (including the Authorization header) will be passed into the success method of the promise.  Otherwise, the failure
-     * method on the promise will be called.
+     * Determine all headers for the "Initiate MPU" request, including the
+     * "Authorization" header, which must be determined by the local server.
+     * This is a promissory function.  If the server responds with a signature,
+     * the promise will be resolved with the headers (including the
+     * Authorization header).  Otherwise, it will be rejected.
      *
      * @param id Associated file ID
-     * @returns {qq.Promise}
+     * @returns {Promise}
      */
     function getHeaders(id) {
-        var promise = new qq.Promise();
-
-        options.getKey(id).then(function(key) {
+        return options.getKey(id).then(function(key) {
             var bucket = options.getBucket(id),
                 host = options.getHost(id),
                 headers = {},
@@ -84,10 +83,14 @@ qq.s3.InitiateMultipartAjaxRequester = function(o) {
                 .withHeaders(headers);
 
             // Ask the local server to sign the request.  Use this signature to form the Authorization header.
-            getSignatureAjaxRequester.getSignature(id, {signatureConstructor: signatureConstructor}).then(promise.success, promise.failure);
+            return new Promise(function(resolve, reject) {
+                getSignatureAjaxRequester.getSignature(id, {signatureConstructor: signatureConstructor}).then(function (headers, endOfUrl) {
+                    resolve({headers: headers, endOfUrl: endOfUrl});
+                }, function(errorReason) {
+                    reject(new Error(errorReason));
+                });
+            });
         });
-
-        return promise;
     }
 
     /**
@@ -168,13 +171,13 @@ qq.s3.InitiateMultipartAjaxRequester = function(o) {
         send: function(id) {
             var promise = new qq.Promise();
 
-            getHeaders(id).then(function(headers, endOfUrl) {
+            getHeaders(id).then(function(info) {
                 options.log("Submitting S3 initiate multipart upload request for " + id);
 
                 pendingInitiateRequests[id] = promise;
                 requester.initTransport(id)
-                    .withPath(endOfUrl)
-                    .withHeaders(headers)
+                    .withPath(info.endOfUrl)
+                    .withHeaders(info.headers)
                     .send();
             }, promise.failure);
 

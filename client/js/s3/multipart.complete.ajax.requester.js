@@ -35,16 +35,15 @@ qq.s3.CompleteMultipartAjaxRequester = function(o) {
     });
 
     /**
-     * Attach all required headers (including Authorization) to the "Complete" request.  This is a promissory function
-     * that will fulfill the associated promise once all headers have been attached or when an error has occurred that
-     * prevents headers from being attached.
+     * Attach all required headers (including Authorization) to the "Complete"
+     * request.  This is a promissory function that will resolved once all
+     * headers have been attached or when an error has occurred that prevents
+     * headers from being attached.
      *
-     * @returns {qq.Promise}
+     * @returns {Promise}
      */
     function getHeaders(id, uploadId, body) {
-        var promise = new qq.Promise();
-
-        options.getKey(id).then(function(key) {
+        return options.getKey(id).then(function(key) {
             var headers = {},
                 bucket = options.getBucket(id),
                 host = options.getHost(id),
@@ -55,10 +54,14 @@ qq.s3.CompleteMultipartAjaxRequester = function(o) {
                     .withContentType("application/xml; charset=UTF-8");
 
             // Ask the local server to sign the request.  Use this signature to form the Authorization header.
-            getSignatureAjaxRequester.getSignature(id, {signatureConstructor: signatureConstructor}).then(promise.success, promise.failure);
+            return new Promise(function(resolve, reject) {
+                getSignatureAjaxRequester.getSignature(id, {signatureConstructor: signatureConstructor}).then(function(headers, endOfUrl) {
+                    resolve({headers: headers, endOfUrl: endOfUrl});
+                }, function(errorReason) {
+                    reject(new Error(errorReason));
+                });
+            });
         });
-
-        return promise;
     }
 
     /**
@@ -171,15 +174,15 @@ qq.s3.CompleteMultipartAjaxRequester = function(o) {
             var promise = new qq.Promise(),
                 body = getCompleteRequestBody(etagEntries);
 
-            getHeaders(id, uploadId, body).then(function(headers, endOfUrl) {
+            getHeaders(id, uploadId, body).then(function(info) {
                 options.log("Submitting S3 complete multipart upload request for " + id);
 
                 pendingCompleteRequests[id] = promise;
-                delete headers["Content-Type"];
+                delete info.headers["Content-Type"];
 
                 requester.initTransport(id)
-                    .withPath(endOfUrl)
-                    .withHeaders(headers)
+                    .withPath(info.endOfUrl)
+                    .withHeaders(info.headers)
                     .withPayload(body)
                     .send();
             }, promise.failure);

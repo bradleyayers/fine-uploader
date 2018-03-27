@@ -125,11 +125,11 @@ qq.s3.AbortMultipartAjaxRequester = function(o) {
          * @param uploadId AWS uploadId for this file
          */
         send: function(id, uploadId) {
-            getHeaders(id, uploadId).then(function(headers, endOfUrl) {
+            getHeaders(id, uploadId).then(function(info) {
                 options.log("Submitting S3 Abort multipart upload request for " + id);
                 requester.initTransport(id)
-                    .withPath(endOfUrl)
-                    .withHeaders(headers)
+                    .withPath(info.endOfUrl)
+                    .withHeaders(info.headers)
                     .send();
             });
         }
