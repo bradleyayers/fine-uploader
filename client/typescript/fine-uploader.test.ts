@@ -2,6 +2,7 @@ import { FineUploader, UIOptions } from 'fine-uploader';
 import { s3 } from 'fine-uploader/lib/s3';
 import { azure } from 'fine-uploader/lib/azure';
 import { PromiseOptions } from 'fine-uploader/lib/core';
+import { s3 as s3Core } from 'fine-uploader/lib/core/s3';
 
 /**
  * Prepare/set options for the core + UI FineUploader
@@ -58,6 +59,34 @@ let s3UIOptions: s3.S3UIOptions = {
 }
 let s3Uploader = new s3.FineUploader(s3UIOptions);
 
+
+/**
+ * Prepare/set options for the core Amazon S3 FineUploaderBasic
+ */
+let s3CoreOptions: s3Core.S3CoreOptions = {
+    debug: true,
+    request: {
+        endpoint: '{ YOUR_BUCKET_NAME }.s3.amazonaws.com',
+        accessKey: '{ YOUR_ACCESS_KEY }'
+    },
+    signature: {
+        endpoint: '/s3/signature'
+    },
+    uploadSuccess: {
+        endpoint: '/s3/success'
+    },
+    iframeSupport: {
+        localBlankPagePath: '/success.html'
+    },
+    retry: {
+        enableAuto: true // defaults to false
+    },
+    deleteFile: {
+        enabled: true,
+        endpoint: '/s3handler'
+    }
+}
+let s3CoreUploader = new s3Core.FineUploaderBasic(s3CoreOptions);
 
 
 /**

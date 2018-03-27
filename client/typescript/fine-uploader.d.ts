@@ -910,6 +910,10 @@ declare module "fine-uploader/lib/core" {
          */
         request?: RequestOptions;
         /**
+         * RetryOptions
+         */
+        retry?: RetryOptions;
+        /**
          * ScalingOptions
          */
         scaling?: ScalingOptions;
@@ -933,8 +937,6 @@ declare module "fine-uploader/lib/core" {
          * Core callback functions
          */
         callbacks?: CoreEvents;
-
-
     }
 
     /**
@@ -2700,6 +2702,7 @@ declare module "fine-uploader/lib/azure" {
         UIDeleteFileOptions,
         UIMessages,
         UIPasteOptions,
+        UIRetryOptions,
         UIScalingOptions,
         UITextOptions
     } from 'fine-uploader';
@@ -2709,6 +2712,7 @@ declare module "fine-uploader/lib/azure" {
         ChunkingOptions,
         CorsOptions,
         RequestOptions,
+        RetryOptions,
         CoreOptions,
         ResumableFileObject,
         PromiseOptions
@@ -3062,9 +3066,11 @@ declare module "fine-uploader/lib/azure" {
              * RequestOptions
              */
             request?: AzureRequestOptions;
-
+            /**
+             * Retry options
+             */
+            retry?: UIRetryOptions & RetryOptions;
         }
-
 
     }
 
@@ -3079,25 +3085,25 @@ declare module "fine-uploader/lib/s3" {
         UIDeleteFileOptions,
         UIMessages,
         UIPasteOptions,
+        UIRetryOptions,
         UIScalingOptions,
         UITextOptions
     } from 'fine-uploader';
 
     import {
-        FineUploaderBasic as FineUploaderBasicCore,
         ChunkingOptions,
         CorsOptions,
         RequestOptions,
         CoreOptions,
         ResumableFileObject,
         CoreEvents,
-        PromiseOptions
+        PromiseOptions,
+        RetryOptions
     } from 'fine-uploader/lib/core';
 
-
+    import { s3 as s3Core } from 'fine-uploader/lib/core/s3';
 
     export namespace s3 {
-
 
         export class FineUploader extends FineUploaderCore {
 
@@ -3175,6 +3181,90 @@ declare module "fine-uploader/lib/s3" {
             setUploadSuccessParams(newParams: any, id?: number): void;
         }
 
+        /**
+         * S3UIOptions
+         */
+        export interface S3UIOptions extends UIOptions, S3CoreOptions {
+            /**
+             * failedUploadText options
+             */
+            failedUploadTextDisplay?: S3FailedUploadTextDisplayOptions;
+            /**
+             * chunking options
+             */
+            chunking?: S3ChunkingOptions;
+            /**
+             * cors options
+             */
+            cors?: S3CorsOptions;
+            /**
+             * request options
+             */
+            request?: S3RequestOptions;
+            /**
+             * deleteFile options
+             */
+            deleteFile?: UIDeleteFileOptions;
+            /**
+             * messages
+             */
+            messages?: UIMessages;
+            /**
+             * paste UI options
+             */
+            paste?: UIPasteOptions;
+            /**
+             * Retry options
+             */
+            retry?: UIRetryOptions & RetryOptions;
+            /**
+             * UI scaling options
+             */
+            scaling?: UIScalingOptions;
+            /**
+             * UI text options
+             */
+            text?: UITextOptions;
+        }
+
+        export import FineUploaderBasic = s3Core.FineUploaderBasic;
+        export type S3ChunkingOptions = s3Core.S3ChunkingOptions;
+        export type S3CredentialsOptions = s3Core.S3CredentialsOptions;
+        export type S3CorsOptions = s3Core.S3CorsOptions;
+        export type S3iFrameSupportOptions = s3Core.S3iFrameSupportOptions;
+        export type BucketFunction = s3Core.BucketFunction;
+        export type HostFunction = s3Core.HostFunction;
+        export type KeyFunction = s3Core.KeyFunction;
+        export type S3ObjectPropertyOptions = s3Core.S3ObjectPropertyOptions;
+        export type S3RequestOptions = s3Core.S3RequestOptions;
+        export type S3CustomHeaderFunction = s3Core.S3CustomHeaderFunction;
+        export type S3SignatureOptions = s3Core.S3SignatureOptions;
+        export type S3UploadSuccessOptions = s3Core.S3UploadSuccessOptions;
+        export type S3CoreOptions = s3Core.S3CoreOptions;
+        export type S3FailedUploadTextDisplayOptions = s3Core.S3FailedUploadTextDisplayOptions;
+        export type OnCredentialsExpired = s3Core.OnCredentialsExpired;
+        export type S3Events = s3Core.S3Events;
+        export type S3ResumableFileObject = s3Core.S3ResumableFileObject;
+
+    }
+
+}
+
+declare module "fine-uploader/lib/core/s3" {
+
+    import {
+        FineUploaderBasic as FineUploaderBasicCore,
+        ChunkingOptions,
+        CorsOptions,
+        RequestOptions,
+        CoreOptions,
+        ResumableFileObject,
+        CoreEvents,
+        PromiseOptions
+    } from 'fine-uploader/lib/core';
+
+    export namespace s3 {
+
         export class FineUploaderBasic extends FineUploaderBasicCore {
 
             constructor(fineuploaderOptions?: S3CoreOptions);
@@ -3251,7 +3341,6 @@ declare module "fine-uploader/lib/s3" {
             setUploadSuccessParams(newParams: any, id?: number): void;
 
         }
-
 
         /**
          * S3CredentialsOptions
@@ -3584,48 +3673,6 @@ declare module "fine-uploader/lib/s3" {
         }
 
         /**
-         * S3UIOptions
-         */
-        export interface S3UIOptions extends UIOptions, S3CoreOptions {
-            /**
-             * failedUploadText options
-             */
-            failedUploadTextDisplay?: S3FailedUploadTextDisplayOptions;
-            /**
-             * chunking options
-             */
-            chunking?: S3ChunkingOptions;
-            /**
-             * cors options
-             */
-            cors?: S3CorsOptions;
-            /**
-             * request options
-             */
-            request?: S3RequestOptions;
-            /**
-             * deleteFile options
-             */
-            deleteFile?: UIDeleteFileOptions;
-            /**
-             * messages
-             */
-            messages?: UIMessages;
-            /**
-             * paste UI options
-             */
-            paste?: UIPasteOptions;
-            /**
-             * UI scaling options
-             */
-            scaling?: UIScalingOptions;
-            /**
-             * UI text options
-             */
-            text?: UITextOptions;
-        }
-
-        /**
          * Resumable file object type for S3
          */
         export interface S3ResumableFileObject extends ResumableFileObject {
@@ -3634,6 +3681,7 @@ declare module "fine-uploader/lib/s3" {
              */
             key?: string;
         }
+
     }
 
 }
