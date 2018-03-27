@@ -10,6 +10,7 @@ if (qqtest.canDownloadFileAsBlob) {
 
         before(function() {
             oldWrapCallbacks = qq.FineUploaderBasic.prototype._wrapCallbacks;
+            window.localStorage.clear();
 
             // "Turn off" wrapping of callbacks that squelches errors.  We need AssertionErrors in callbacks to bubble.
             qq.FineUploaderBasic.prototype._wrapCallbacks = function() {};

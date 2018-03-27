@@ -127,10 +127,10 @@ qq.traditional.XhrUploadHandler = function(spec, proxy) {
                     )
                     .then(function(xhr) {
                         resolve({response: parseResponse(false, xhr), xhr: xhr});
-                    }, function(xhr) {
+                    }, function(err) {
                         var error = new Error("All chunks done requester failed");
-                        error.response = parseResponse(false, xhr);
-                        error.xhr = xhr;
+                        error.response = parseResponse(false, err.xhr);
+                        error.xhr = err.xhr;
                         reject(error);
                     });
             });
