@@ -3069,7 +3069,7 @@ declare module "fine-uploader/lib/azure" {
             /**
              * Retry options
              */
-            retry?: UIRetryOptions & RetryOptions;
+            retry?: UIRetryOptions;
         }
 
     }
@@ -3216,7 +3216,7 @@ declare module "fine-uploader/lib/s3" {
             /**
              * Retry options
              */
-            retry?: UIRetryOptions & RetryOptions;
+            retry?: UIRetryOptions;
             /**
              * UI scaling options
              */
