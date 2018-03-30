@@ -2693,6 +2693,14 @@ declare module "fine-uploader" {
 
 }
 
+declare module "fine-uploader/lib/all" {
+    import { azure } from 'fine-uploader/lib/azure';
+    export * from 'fine-uploader/lib/core';
+    import { s3 } from 'fine-uploader/lib/s3';
+
+    export import azure = azure;
+    export import s3 = s3;
+}
 
 declare module "fine-uploader/lib/azure" {
 
