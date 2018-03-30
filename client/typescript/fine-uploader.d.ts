@@ -2707,18 +2707,7 @@ declare module "fine-uploader/lib/azure" {
         UITextOptions
     } from 'fine-uploader';
 
-    import {
-        FineUploaderBasic as FineUploaderBasicCore,
-        ChunkingOptions,
-        CorsOptions,
-        RequestOptions,
-        RetryOptions,
-        CoreOptions,
-        ResumableFileObject,
-        PromiseOptions
-    } from 'fine-uploader/lib/core';
-
-
+    import { azure as azureCore } from 'fine-uploader/lib/core/azure';
 
     export namespace azure {
 
@@ -2774,6 +2763,91 @@ declare module "fine-uploader/lib/azure" {
              */
             setUploadSuccessParams(newParams: any, id?: number): void;
         }
+
+        /**
+         * AzureFailedUploadTextDisplayOptions
+         */
+        export interface AzureFailedUploadTextDisplayOptions {
+            /**
+             * You will most likely want to keep this at the default value of 'custom'. See the UI options documentation for more info on this option.
+             *
+             * @default `'custom'`
+             */
+            mode?: string;
+        }
+
+        /**
+         * AzureUIOptions
+         */
+        export interface AzureUIOptions extends UIOptions, AzureCoreOptions {
+            /**
+             * failedUploadText options
+             */
+            failedUploadTextDisplay?: AzureFailedUploadTextDisplayOptions;
+
+            /**
+             * chunking options
+             */
+            chunking?: AzureChunkingOptions;
+            /**
+             * cors options
+             */
+            cors?: AzureCorsOptions;
+            /**
+             * deleteFile options
+             */
+            deleteFile?: UIDeleteFileOptions;
+            /**
+             * messages
+             */
+            messages?: UIMessages;
+            /**
+             * paste UI options
+             */
+            paste?: UIPasteOptions;
+            /**
+             * UI scaling options
+             */
+            scaling?: UIScalingOptions;
+            /**
+             * UI text options
+             */
+            text?: UITextOptions;
+            /**
+             * RequestOptions
+             */
+            request?: AzureRequestOptions;
+            /**
+             * Retry options
+             */
+            retry?: UIRetryOptions;
+        }
+
+        export import FineUploaderBasic = azureCore.FineUploaderBasic;
+        export import AzureChunkingOptions = azureCore.AzureChunkingOptions;
+        export import AzureCorsOptions = azureCore.AzureCorsOptions;
+        export import AzureCoreOptions = azureCore.AzureCoreOptions;
+        export import AzureRequestOptions = azureCore.AzureRequestOptions;
+        export import AzureResumableFileObject = azureCore.AzureResumableFileObject;
+        
+    }
+
+}
+
+declare module "fine-uploader/lib/core/azure" {
+
+    import {
+        FineUploaderBasic as FineUploaderBasicCore,
+        ChunkingOptions,
+        CorsOptions,
+        RequestOptions,
+        RetryOptions,
+        CoreOptions,
+        ResumableFileObject,
+        PromiseOptions
+    } from 'fine-uploader/lib/core';
+
+    export namespace azure {
 
         export class FineUploaderBasic extends FineUploaderBasicCore {
 
@@ -2974,18 +3048,6 @@ declare module "fine-uploader/lib/azure" {
         }
 
         /**
-         * AzureFailedUploadTextDisplayOptions
-         */
-        export interface AzureFailedUploadTextDisplayOptions {
-            /**
-             * You will most likely want to keep this at the default value of 'custom'. See the UI options documentation for more info on this option.
-             *
-             * @default `'custom'`
-             */
-            mode?: string;
-        }
-
-        /**
          * Resumable file object type for Azure
          */
         export interface AzureResumableFileObject extends ResumableFileObject {
@@ -3023,53 +3085,6 @@ declare module "fine-uploader/lib/azure" {
              * AzureUploadSuccessOptions
              */
             uploadSuccess?: AzureUploadSuccessOptions;
-        }
-
-        /**
-         * AzureUIOptions
-         */
-        export interface AzureUIOptions extends UIOptions, AzureCoreOptions {
-            /**
-             * failedUploadText options
-             */
-            failedUploadTextDisplay?: AzureFailedUploadTextDisplayOptions;
-
-            /**
-             * chunking options
-             */
-            chunking?: AzureChunkingOptions;
-            /**
-             * cors options
-             */
-            cors?: AzureCorsOptions;
-            /**
-             * deleteFile options
-             */
-            deleteFile?: UIDeleteFileOptions;
-            /**
-             * messages
-             */
-            messages?: UIMessages;
-            /**
-             * paste UI options
-             */
-            paste?: UIPasteOptions;
-            /**
-             * UI scaling options
-             */
-            scaling?: UIScalingOptions;
-            /**
-             * UI text options
-             */
-            text?: UITextOptions;
-            /**
-             * RequestOptions
-             */
-            request?: AzureRequestOptions;
-            /**
-             * Retry options
-             */
-            retry?: UIRetryOptions;
         }
 
     }

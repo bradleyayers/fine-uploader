@@ -2,6 +2,7 @@ import { FineUploader, UIOptions } from 'fine-uploader';
 import { s3 } from 'fine-uploader/lib/s3';
 import { azure } from 'fine-uploader/lib/azure';
 import { PromiseOptions } from 'fine-uploader/lib/core';
+import { azure as azureCore } from 'fine-uploader/lib/core/azure';
 import { s3 as s3Core } from 'fine-uploader/lib/core/s3';
 
 /**
@@ -111,6 +112,29 @@ let azureUIOptions: azure.AzureUIOptions = {
     }
 }
 let azureUploader = new azure.FineUploader(azureUIOptions);
+
+
+/**
+ * Prepare/set options for the Amazon S3 FineUploader
+ */
+let azureCoreOptions: azureCore.AzureCoreOptions = {
+    request: {
+        endpoint: 'https://{ YOUR_STORAGE_ACCOUNT_NAME }.blob.core.windows.net/{ YOUR_CONTAINER_NAME }'
+    },
+    signature: {
+        endpoint: '/signature'
+    },
+    uploadSuccess: {
+        endpoint: '/success'
+    },
+    retry: {
+        enableAuto: true
+    },
+    deleteFile: {
+        enabled: true
+    }
+}
+let azureCoreUploader = new azureCore.FineUploaderBasic(azureCoreOptions);
 
 /**
  * Manually upload files to the server. This method should be called on some button click event
