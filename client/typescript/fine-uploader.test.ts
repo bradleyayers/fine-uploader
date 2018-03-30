@@ -1,8 +1,9 @@
 import { FineUploader, UIOptions } from 'fine-uploader';
-import * as all from 'fine-uploader/lib/all';
+import * as qqAll from 'fine-uploader/lib/all';
 import { s3 } from 'fine-uploader/lib/s3';
 import { azure } from 'fine-uploader/lib/azure';
 import { PromiseOptions, FineUploaderBasic } from 'fine-uploader/lib/core';
+import * as qqCoreAll from 'fine-uploader/lib/core/all';
 import { azure as azureCore } from 'fine-uploader/lib/core/azure';
 import { s3 as s3Core } from 'fine-uploader/lib/core/s3';
 
@@ -137,10 +138,16 @@ let azureCoreOptions: azureCore.AzureCoreOptions = {
 }
 let azureCoreUploader = new azureCore.FineUploaderBasic(azureCoreOptions);
 
-// Basic checks that fine-uploader/lib/all namespaces match 
-let allAzure: typeof azure = all.azure;
-let allS3: typeof s3 = all.s3;
-let allFineUploaderBasic: typeof FineUploaderBasic = all.FineUploaderBasic;
+// Basic checks that fine-uploader/lib/all namespace is composed of correctly
+let a1: typeof azure = qqAll.azure;
+let a2: typeof s3 = qqAll.s3;
+let a3: typeof FineUploaderBasic = qqAll.FineUploaderBasic;
+
+// Basic checks that fine-uploader/lib/core/all namespaces is composed
+// correctly.
+let b1: typeof azureCore = qqCoreAll.azure;
+let b2: typeof s3Core = qqCoreAll.s3;
+let b3: typeof FineUploaderBasic = qqCoreAll.FineUploaderBasic;
 
 /**
  * Manually upload files to the server. This method should be called on some button click event
