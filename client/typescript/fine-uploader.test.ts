@@ -141,7 +141,7 @@ let azureCoreUploader = new azureCore.FineUploaderBasic(azureCoreOptions);
 // Basic checks that fine-uploader/lib/all namespace is composed of correctly
 let a1: typeof azure = qqAll.azure;
 let a2: typeof s3 = qqAll.s3;
-let a3: typeof FineUploaderBasic = qqAll.FineUploaderBasic;
+let a3: typeof FineUploader = qqAll.FineUploader;
 
 // Basic checks that fine-uploader/lib/core/all namespaces is composed
 // correctly.

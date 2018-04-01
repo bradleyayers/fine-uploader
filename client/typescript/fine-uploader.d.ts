@@ -1,6 +1,7 @@
 // Type definitions for FineUploader 5.x.x
 // Project: http://fineuploader.com/
 // Definitions by: Sukhdeep Singh <https://github.com/SinghSukhdeep>
+//                 Bradley Ayers <https://github.com/bradleyayers>
 
 
 declare module "fine-uploader/lib/core" {
@@ -2695,7 +2696,7 @@ declare module "fine-uploader" {
 
 declare module "fine-uploader/lib/all" {
     import { azure } from 'fine-uploader/lib/azure';
-    export * from 'fine-uploader/lib/core';
+    export * from 'fine-uploader';
     import { s3 } from 'fine-uploader/lib/s3';
 
     export import azure = azure;
@@ -2831,7 +2832,6 @@ declare module "fine-uploader/lib/azure" {
             retry?: UIRetryOptions;
         }
 
-        export import FineUploaderBasic = azureCore.FineUploaderBasic;
         export import AzureChunkingOptions = azureCore.AzureChunkingOptions;
         export import AzureCorsOptions = azureCore.AzureCorsOptions;
         export import AzureCoreOptions = azureCore.AzureCoreOptions;
@@ -3259,7 +3259,6 @@ declare module "fine-uploader/lib/s3" {
             text?: UITextOptions;
         }
 
-        export import FineUploaderBasic = s3Core.FineUploaderBasic;
         export import S3ChunkingOptions = s3Core.S3ChunkingOptions;
         export import S3CredentialsOptions = s3Core.S3CredentialsOptions;
         export import S3CorsOptions = s3Core.S3CorsOptions;
